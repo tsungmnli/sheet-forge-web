@@ -1,0 +1,24 @@
+.root {
+  position: absolute;
+  z-index: 50;
+  display: inline-block;
+  width: 380px;
+  max-width: 90vw;
+  padding: var(--mantine-spacing-xs);
+  border-color: var(--mantine-color-blue-3);
+}
+
+.host {
+  min-height: 48px;
+  margin-bottom: var(--mantine-spacing-xs);
+  padding: 0 4px;
+  border: 1px solid var(--mantine-color-gray-4);
+  border-radius: var(--mantine-radius-sm);
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: var(--mantine-spacing-xs);
+}

@@ -1,0 +1,82 @@
+/* 원본 크롭 뷰어 */
+.cropViewer {
+  position: relative;
+  height: 400px;
+  overflow: hidden;
+  user-select: none;
+  background: var(--mantine-color-dark-8);
+}
+
+.cropImage {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transform-origin: center;
+}
+
+/* 그림을 지운 직후 뜨는 되돌리기 토스트 */
+.undoToast {
+  position: fixed;
+  left: 50%;
+  bottom: 96px;
+  transform: translateX(-50%);
+  z-index: 300;
+  background: var(--mantine-color-dark-8);
+  color: white;
+  padding: 8px 8px 8px 16px;
+}
+
+.removedThumb {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  border-radius: var(--mantine-radius-sm);
+  background: var(--mantine-color-gray-1);
+}
+
+/* 선택지: 번호 칸 너비만큼 안쪽으로 들여쓰기 */
+.choiceBody {
+  margin-left: 24px;
+}
+
+/* 하단 고정 바 */
+.bottomBar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 200;
+  border-top: 1px solid var(--mantine-color-gray-3);
+  background: var(--mantine-color-body);
+  padding: var(--mantine-spacing-sm) var(--mantine-spacing-md);
+}
+
+.bottomBarInner {
+  max-width: 1024px;
+  margin: 0 auto;
+}
+
+/* 본문 문단 카드 (막힌 항목이면 data-hint로 강조) */
+.stemBlock {
+  padding: var(--mantine-spacing-sm);
+  border: 1px solid var(--mantine-color-gray-3);
+  border-radius: var(--mantine-radius-md);
+}
+
+.stemBlock[data-hint="true"] {
+  border-color: var(--mantine-color-yellow-4);
+  background: var(--mantine-color-yellow-0);
+}
+
+.stemInlines {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  font-size: 16px;
+  line-height: 1.6;
+}

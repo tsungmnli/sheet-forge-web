@@ -1,0 +1,357 @@
+export interface HomeOut {
+  todo: TodoOut;
+}
+
+export interface TodoOut {
+  needs_review: number;
+  recognizing: number;
+  failed: number;
+  next_problem?: NextProblemOut | null;
+}
+
+export interface NextProblemOut {
+  exam_id: string;
+  problem_id: string;
+}
+
+export interface ExamOut {
+  id: string;
+  title: string;
+  student: string;
+  memo: string;
+  version: number;
+  created_at: string;
+  updated_at: string;
+  page_count: number;
+  picked_count: number;
+  needs_review: number;
+  confirmed: number;
+  next_action: string;
+  poll_after_ms?: number | null;
+}
+
+export interface ExamListOut {
+  items: ExamOut[];
+  next_cursor?: string | null;
+}
+
+export interface WorksheetListItem {
+  id: string;
+  title: string;
+  student: string;
+  problem_count: number;
+  last_export?: Record<string, unknown> | null;
+  updated_at: string;
+}
+
+export interface WorksheetListOut {
+  items: WorksheetListItem[];
+  next_cursor?: string | null;
+}
+
+export interface StudentsOut {
+  items: string[];
+}
+
+export interface TrashItemOut {
+  type: "exam" | "page" | "problem" | "worksheet";
+  id: string;
+  label: string;
+  deleted_at: string;
+  purge_at: string;
+}
+
+export interface TrashListOut {
+  items: TrashItemOut[];
+}
+
+export interface RestoreOut {
+  type: string;
+  id: string;
+  restored: Record<string, number>;
+}
+
+export interface ExamCreateIn {
+  title?: string;
+  student?: string;
+  memo?: string;
+}
+
+export interface WorksheetCreateIn {
+  title?: string;
+  student?: string | null;
+  from_exam_id?: string | null;
+  problem_ids?: string[] | null;
+}
+
+export interface ExamPatchIn {
+  title?: string | null;
+  student?: string | null;
+  memo?: string | null;
+}
+
+export interface ProcessingOut {
+  state: string;
+  step?: string | null;
+  message?: string | null;
+}
+
+export interface PageOut {
+  id: string;
+  exam_id: string;
+  order: number;
+  thumb_url: string;
+  processing: ProcessingOut;
+  picked_count: number;
+  version: number;
+}
+
+export interface PageListOut {
+  items: PageOut[];
+  poll_after_ms?: number | null;
+}
+
+export interface PageDetailOut {
+  id: string;
+  exam_id: string;
+  order: number;
+  thumb_url: string;
+  processing: ProcessingOut;
+  picked_count: number;
+  version: number;
+  image?: {
+    original_url?: string | null;
+    corrected_url?: string | null;
+    width?: number | null;
+    height?: number | null;
+  };
+  correction?: Record<string, unknown> | null;
+  segments?: SegmentOut[];
+  poll_after_ms?: number | null;
+}
+
+export interface SegmentOut {
+  id: string;
+  bbox: number[];
+  number?: string | null;
+  marked: boolean;
+}
+
+export interface PageOrderIn {
+  page_ids: string[];
+}
+
+export interface ProblemListItemOut {
+  segment_id: string;
+  page_id: string;
+  number?: string | null;
+  bbox: number[];
+  crop_url?: string | null;
+  state: "not_read" | "recognizing" | "needs_review" | "confirmed" | "failed";
+  problem_id?: string | null;
+  preview: string;
+  preview_tex?: string;
+  badges: string[];
+}
+
+export interface ProblemListOut {
+  items: ProblemListItemOut[];
+  poll_after_ms?: number | null;
+}
+
+export interface SegmentsMarkIn {
+  marked: boolean;
+  segment_ids?: string[] | null;
+  page_id?: string | null;
+}
+
+export interface MarkOut {
+  changed: number;
+  skipped: number;
+  picked_count: number;
+}
+
+export interface ReadIn {
+  segment_ids?: string[] | null;
+}
+
+export interface ReadOut {
+  requested: number;
+  skipped: { segment_id: string; reason: string }[];
+  problems: { id: string; segment_id: string; status: string }[];
+  poll_after_ms?: number | null;
+}
+
+export interface SegmentPatchIn {
+  marked: boolean;
+}
+
+export interface SegmentPatchOut {
+  segment: SegmentOut;
+  picked_count: number;
+  exam_picked_count: number;
+}
+
+export interface SegmentItemIn {
+  id?: string | null;
+  bbox: number[];
+  number?: string | null;
+}
+
+export interface SegmentsPutIn {
+  segments: SegmentItemIn[];
+}
+
+export interface SegmentsPutOut {
+  segments: SegmentOut[];
+  picked_count: number;
+}
+
+export interface ProblemSourceOut {
+  page_id: string;
+  segment_id: string;
+  bbox: number[];
+  number?: string | null;
+  crop_url?: string | null;
+}
+
+export interface TextInlineOut {
+  t: "text";
+  v: string;
+  bold?: boolean | null;
+  underline?: boolean | null;
+  conf?: number | null;
+}
+
+export interface MathInlineOut {
+  t: "math";
+  latex: string;
+  breaks?: number[] | null;
+  conf?: number | null;
+}
+
+export interface ImageInlineOut {
+  t: "image";
+  ref?: string | null;
+  conf?: number | null;
+}
+
+export type InlineOut = TextInlineOut | MathInlineOut | ImageInlineOut;
+
+export interface StemBlockOut {
+  type: string;
+  inlines: InlineOut[];
+}
+
+export interface ChoicesOut {
+  items: InlineOut[][];
+  layout?: string;
+}
+
+export interface FigureOut {
+  id: string;
+  kind?: string;
+  raw_ref?: string | null;
+  clean_ref?: string | null;
+  use?: "raw" | "clean";
+  placement?: "after_stem" | "after_choices";
+  width_mm?: number | null;
+  bbox?: number[] | null;
+  levels?: Record<string, string | null> | null;
+  clean_level?: number | null;
+  erased?: boolean; // 낙서 지우개로 고친 그림이면 true(clean_ref가 지운 결과)
+  state?: "processing" | "ready" | "failed";
+}
+
+export interface ContentOut {
+  stem: StemBlockOut[];
+  choices?: ChoicesOut;
+  figures?: FigureOut[];
+}
+
+export interface HintOut {
+  path: string;
+  kind: "low_confidence" | "math_warning";
+  message?: string | null;
+}
+
+export interface BlockerOut {
+  path: string;
+  code: string;
+  message: string;
+}
+
+export interface ChecksOut {
+  can_confirm: boolean;
+  blockers: BlockerOut[];
+}
+
+export interface RemovedFigureOut extends FigureOut {
+  removed_at?: string | null;
+}
+
+export interface ProblemOut {
+  id: string;
+  exam_id: string;
+  status: "recognizing" | "needs_review" | "confirmed" | "failed";
+  version: number;
+  source: ProblemSourceOut;
+  content: ContentOut;
+  points?: number | null;
+  ocr: { has_recognized: boolean };
+  hints: HintOut[];
+  removed_figures?: RemovedFigureOut[];   // 지웠지만 되살릴 수 있는 그림
+  checks: ChecksOut;
+  poll_after_ms?: number | null;
+}
+
+export interface NeighborsOut {
+  index: number;
+  total: number;
+  prev_id?: string | null;
+  next_id?: string | null;
+}
+
+export interface ContentPutBody {
+  stem: StemBlockOut[];
+  choices?: ChoicesOut | null;
+  figures?: FigureOut[];
+}
+
+export interface ContentPutIn {
+  content: ContentPutBody;
+  points?: number | null;
+}
+
+export interface MathCheckIn {
+  items: { latex: string }[];
+}
+
+export interface MathResultOut {
+  status: "ok" | "warn" | "unsupported";
+  message?: string | null;
+  est_width?: number | null;
+}
+
+export interface MathCheckOut {
+  results: MathResultOut[];
+}
+
+export interface StemBlockIn {
+  type: string;
+  inlines: InlineOut[];
+}
+
+export interface ChoicesIn {
+  items: InlineOut[][];
+  layout?: string;
+}
+
+export interface FigureEditIn {
+  id?: string | null;
+  raw_ref?: string | null;
+  clean_ref?: string | null;
+  use?: "raw" | "clean" | null;
+  placement?: "after_stem" | "after_choices" | null;
+  width_mm?: number | null;
+}

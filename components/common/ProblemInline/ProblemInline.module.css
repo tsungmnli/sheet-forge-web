@@ -1,0 +1,41 @@
+.imageWrap {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.image {
+  display: inline-block;
+  max-height: 80px;
+  border-radius: var(--mantine-radius-sm);
+}
+
+.inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: var(--mantine-radius-sm);
+  cursor: pointer;
+}
+
+.inline:hover {
+  background: var(--mantine-color-blue-0);
+}
+
+.inline[data-hint="true"] {
+  background: var(--mantine-color-yellow-1);
+}
+
+.delete {
+  display: inline-flex;
+  color: var(--mantine-color-gray-4);
+}
+
+.delete:hover {
+  color: var(--mantine-color-red-6);
+}
+
+.textInput {
+  display: inline-block;
+  min-width: 80px;
+}

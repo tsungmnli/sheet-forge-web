@@ -1,0 +1,29 @@
+.bigButton {
+  height: 8rem;
+}
+
+.bigButtonInner {
+  flex-direction: column;
+  gap: var(--mantine-spacing-xs);
+}
+
+.list {
+  overflow: hidden;
+}
+
+.row {
+  padding: var(--mantine-spacing-sm) var(--mantine-spacing-md);
+  cursor: pointer;
+}
+
+.row:hover {
+  background: var(--mantine-color-default-hover);
+}
+
+.row + .row {
+  border-top: 1px solid var(--mantine-color-default-border);
+}
+
+.empty {
+  padding: var(--mantine-spacing-xl) 0;
+}

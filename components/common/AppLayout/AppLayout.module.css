@@ -1,0 +1,35 @@
+.header {
+  background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
+  border-bottom: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--mantine-spacing-xs);
+  color: light-dark(var(--mantine-color-gray-9), var(--mantine-color-dark-0));
+}
+
+.brandIcon {
+  color: var(--mantine-color-blue-6);
+  flex-shrink: 0;
+}
+
+.brandName {
+  font-size: var(--mantine-font-size-lg);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* 좁은 화면에서는 아이콘만 보여 준다 */
+.navLabel {
+  @mixin smaller-than $mantine-breakpoint-xs {
+    display: none;
+  }
+}
+
+.navSection {
+  @mixin smaller-than $mantine-breakpoint-xs {
+    margin-inline-end: 0;
+  }
+}

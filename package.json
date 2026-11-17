@@ -9,17 +9,28 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@mantine/core": "^9.8.1",
+    "@mantine/hooks": "^9.8.1",
+    "@mantine/modals": "^9.8.1",
+    "@mantine/notifications": "^9.8.1",
+    "@tabler/icons-react": "^3.52.0",
+    "katex": "^0.19.1",
+    "mathlive": "^0.111.4",
     "next": "16.4.6",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
   "devDependencies": {
+    "@types/katex": "^0.16.8",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
+    "postcss": "^8.5.33",
+    "postcss-preset-mantine": "^1.18.0",
+    "postcss-simple-vars": "^7.0.1",
     "typescript": "^5"
   }
 }

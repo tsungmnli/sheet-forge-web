@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import type { ReactNode } from "react";
-import { Button, Card, Group, Progress, Text } from "@mantine/core";
+import type { ReactNode } from 'react';
+import { Button, Card, Group, Progress, Text } from '@mantine/core';
 
-import classes from "./Exam.module.css";
+import classes from './Exam.module.css';
 
 export interface NextTask {
   guide: string;
@@ -11,6 +11,8 @@ export interface NextTask {
   buttonIcon?: ReactNode;
   progress?: { done: number; total: number };
   onClick?: () => void;
+  secondaryLabel?: string;
+  onSecondary?: () => void;
 }
 
 export function NextTaskCard({ task, loading }: { task?: NextTask; loading: boolean }) {
@@ -39,16 +41,28 @@ export function NextTaskCard({ task, loading }: { task?: NextTask; loading: bool
           )}
         </div>
         {task?.buttonLabel && (
-          <Button
-            size="lg"
-            radius="md"
-            onClick={task.onClick}
-            loading={loading}
-            leftSection={task.buttonIcon}
-            style={{ flexShrink: 0 }}
-          >
-            {task.buttonLabel}
-          </Button>
+          <Group gap="sm" wrap="nowrap" style={{ flexShrink: 0 }}>
+            {task.secondaryLabel && (
+              <Button
+                size="lg"
+                radius="md"
+                variant="default"
+                onClick={task.onSecondary}
+                disabled={loading}
+              >
+                {task.secondaryLabel}
+              </Button>
+            )}
+            <Button
+              size="lg"
+              radius="md"
+              onClick={task.onClick}
+              loading={loading}
+              leftSection={task.buttonIcon}
+            >
+              {task.buttonLabel}
+            </Button>
+          </Group>
         )}
       </Group>
     </Card>

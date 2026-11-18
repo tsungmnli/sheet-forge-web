@@ -1,18 +1,18 @@
-"use client";
+'use client';
 
-import { Badge, Button, Card, Chip, Group, Text } from "@mantine/core";
+import { Badge, Button, Card, Chip, Group, Text } from '@mantine/core';
 
-import { STATUS_COLOR, STATUS_LABEL, type Problem } from "@/lib/examData";
-import { renderMixedContent } from "@/lib/katex";
-import classes from "./Exam.module.css";
+import { STATUS_COLOR, STATUS_LABEL, type Problem } from '@/lib/examData';
+import { renderMixedContent } from '@/lib/katex';
+import classes from './Exam.module.css';
 
-export type Filter = "all" | "needs_review" | "confirmed" | "failed";
+export type Filter = 'all' | 'needs_review' | 'confirmed' | 'failed';
 
 const FILTERS: { value: Filter; label: string }[] = [
-  { value: "all", label: "전체" },
-  { value: "needs_review", label: "확인 필요" },
-  { value: "confirmed", label: "확인 완료" },
-  { value: "failed", label: "읽기 실패" },
+  { value: 'all', label: '전체' },
+  { value: 'needs_review', label: '확인 필요' },
+  { value: 'confirmed', label: '확인 완료' },
+  { value: 'failed', label: '읽기 실패' },
 ];
 
 export interface RowAction {
@@ -29,9 +29,19 @@ interface Props {
   filter: Filter;
   onFilter: (f: Filter) => void;
   rowAction: (p: Problem) => RowAction;
+  onRemove?: (p: Problem) => void; // 있으면 읽기 실패한 행에 '빼기' 단추를 둔다
+  disabled?: boolean;
 }
 
-export function ProblemList({ total, problems, filter, onFilter, rowAction }: Props) {
+export function ProblemList({
+  total,
+  problems,
+  filter,
+  onFilter,
+  rowAction,
+  onRemove,
+  disabled,
+}: Props) {
   return (
     <Card withBorder radius="lg" padding={0} className={classes.list}>
       <Group justify="space-between" align="center" px={16} py={12} wrap="wrap">
@@ -79,9 +89,9 @@ export function ProblemList({ total, problems, filter, onFilter, rowAction }: Pr
               >
                 {STATUS_LABEL[p.status]}
               </Badge>
-              {p.status === "failed" && !p.content ? (
+              {p.status === 'failed' && !p.content ? (
                 <Text size="sm" c="red.7" style={{ flex: 1, minWidth: 0 }}>
-                  {p.failReason || "읽지 못했어요. 다시 읽어 보세요."}
+                  {p.failReason || '읽지 못했어요. 다시 읽어 보세요.'}
                 </Text>
               ) : (
                 <div
@@ -92,14 +102,23 @@ export function ProblemList({ total, problems, filter, onFilter, rowAction }: Pr
                   }}
                 />
               )}
-              <Button
-                variant="light"
-                size="sm"
-                onClick={action.onPrimary}
-                style={{ flexShrink: 0 }}
-              >
-                {action.primaryLabel}
-              </Button>
+              <Group gap={6} wrap="nowrap" style={{ flexShrink: 0 }}>
+                {onRemove && p.status === 'failed' && (
+                  <Button
+                    variant="subtle"
+                    color="gray"
+                    size="sm"
+                    disabled={disabled}
+                    aria-label={`${p.number}번 문제 목록에서 빼기`}
+                    onClick={() => onRemove(p)}
+                  >
+                    빼기
+                  </Button>
+                )}
+                <Button variant="light" size="sm" onClick={action.onPrimary}>
+                  {action.primaryLabel}
+                </Button>
+              </Group>
             </Group>
           );
         })

@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
-import { apiFetch, friendlyError } from "@/lib/api";
-import { notify } from "@/lib/notify";
+import { apiFetch, friendlyError } from '@/lib/api';
+import { notify } from '@/lib/notify';
 import type {
   MarkOut,
   PageDetailOut,
@@ -17,11 +17,11 @@ import type {
   SegmentsMarkIn,
   SegmentsPutIn,
   SegmentsPutOut,
-} from "@/lib/types";
+} from '@/lib/types';
 
-export type WorkshopMode = "pick" | "edit";
+export type WorkshopMode = 'pick' | 'edit';
 
-const JSON_HEADERS = { "Content-Type": "application/json" };
+const JSON_HEADERS = { 'Content-Type': 'application/json' };
 
 // 사진 한 장의 칸 고르기·고치기·읽기 로직. Vite 버전 그대로고, 오류 문구만 알림으로 띄운다.
 export function usePhotoWorkshop(examId: string, pageId: string) {
@@ -29,7 +29,7 @@ export function usePhotoWorkshop(examId: string, pageId: string) {
   const [page, setPage] = useState<PageDetailOut | null>(null);
   const [siblingPages, setSiblingPages] = useState<PageOut[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [mode, setMode] = useState<WorkshopMode>("pick");
+  const [mode, setMode] = useState<WorkshopMode>('pick');
   // null: 범위 고르기 꺼짐, "pending": 시작 칸을 기다리는 중, 그 밖: 시작 칸의 id
   const [rangeStart, setRangeStart] = useState<string | null>(null);
   const [reading, setReading] = useState(false);
@@ -72,15 +72,15 @@ export function usePhotoWorkshop(examId: string, pageId: string) {
   }, [loadPage, loadSiblings]);
 
   useEffect(() => {
-    if (page && mode === "edit") {
+    if (page && mode === 'edit') {
       setEditSegments(page.segments || []);
     }
   }, [page, mode]);
 
-  const segments = page?.segments || [];
-  const displaySegments = mode === "edit" ? editSegments : segments;
+  const segments = useMemo(() => page?.segments ?? [], [page]);
+  const displaySegments = mode === 'edit' ? editSegments : segments;
   const pickedCount =
-    mode === "edit" ? editSegments.filter((s) => s.marked).length : (page?.picked_count ?? 0);
+    mode === 'edit' ? editSegments.filter((s) => s.marked).length : (page?.picked_count ?? 0);
 
   const toggleSegment = useCallback(
     async (segId: string) => {
@@ -89,12 +89,14 @@ export function usePhotoWorkshop(examId: string, pageId: string) {
       const newMarked = !seg.marked;
       const body: SegmentPatchIn = { marked: newMarked };
       const res = await apiFetch<SegmentPatchOut>(`/pages/${pageId}/segments/${segId}`, {
-        method: "PATCH",
+        method: 'PATCH',
         headers: JSON_HEADERS,
         body: JSON.stringify(body),
       });
       if (res.status === 409) {
-        notify.error("이 칸은 이미 읽은 문제가 있어 해제할 수 없어요.");
+        notify.error(
+          '이 칸은 이미 읽은 문제가 있어요. 시험지 화면의 문제 목록에서 그 문제를 먼저 빼 주세요.',
+        );
         return;
       }
       if (res.error) {
@@ -125,7 +127,7 @@ export function usePhotoWorkshop(examId: string, pageId: string) {
       const hi = Math.max(si, ei);
       const body: SegmentsMarkIn = { marked: true, segment_ids: ids.slice(lo, hi + 1) };
       const res = await apiFetch<MarkOut>(`/exams/${examId}/segments/mark`, {
-        method: "POST",
+        method: 'POST',
         headers: JSON_HEADERS,
         body: JSON.stringify(body),
       });
@@ -145,7 +147,7 @@ export function usePhotoWorkshop(examId: string, pageId: string) {
     async (marked: boolean) => {
       const body: SegmentsMarkIn = { marked, page_id: pageId };
       const res = await apiFetch<MarkOut>(`/exams/${examId}/segments/mark`, {
-        method: "POST",
+        method: 'POST',
         headers: JSON_HEADERS,
         body: JSON.stringify(body),
       });
@@ -157,7 +159,7 @@ export function usePhotoWorkshop(examId: string, pageId: string) {
         notify.warn(
           marked
             ? `${res.data.skipped}개 칸은 이미 읽은 문제가 있어 건너뛰었어요.`
-            : `${res.data.skipped}개 칸은 이미 읽은 문제가 있어 해제할 수 없어요.`,
+            : `${res.data.skipped}개 칸은 이미 읽은 문제가 있어 해제하지 못했어요. 시험지 화면의 문제 목록에서 먼저 빼 주세요.`,
         );
       }
       loadPage();
@@ -171,13 +173,13 @@ export function usePhotoWorkshop(examId: string, pageId: string) {
   const readPicked = useCallback(async () => {
     setReading(true);
     const res = await apiFetch<ReadOut>(`/exams/${examId}/read`, {
-      method: "POST",
+      method: 'POST',
       headers: JSON_HEADERS,
       body: JSON.stringify({}),
     });
     setReading(false);
     if (res.status === 429) {
-      notify.error("오늘 읽기 한도를 다 썼어요. 내일 다시 시도해 주세요.");
+      notify.error('오늘 읽기 한도를 다 썼어요. 내일 다시 시도해 주세요.');
       return;
     }
     if (res.error) {
@@ -186,7 +188,7 @@ export function usePhotoWorkshop(examId: string, pageId: string) {
     }
     if (res.data && res.data.problems.length === 0) {
       // 새로 읽기 시작한 문제가 없으면(이미 읽은 칸만 골랐을 때 등) 이동하지 않고 알려 준다
-      notify.info("새로 읽을 문제가 없어요. 이미 읽은 칸이거나 고르지 않은 칸이에요.");
+      notify.info('새로 읽을 문제가 없어요. 이미 읽은 칸이거나 고르지 않은 칸이에요.');
       loadPage();
       return;
     }
@@ -198,42 +200,42 @@ export function usePhotoWorkshop(examId: string, pageId: string) {
     const body: SegmentsPutIn = {
       segments: editSegments.map((s) => ({
         // 새로 그린 칸의 임시 id(new-...)는 서버에 없으므로 보내지 않는다(id가 없으면 서버가 새 칸으로 만든다)
-        id: s.id && !s.id.startsWith("new-") ? s.id : undefined,
+        id: s.id && !s.id.startsWith('new-') ? s.id : undefined,
         bbox: s.bbox,
         number: s.number || undefined,
       })),
     };
     const res = await apiFetch<SegmentsPutOut>(`/pages/${pageId}/segments`, {
-      method: "PUT",
+      method: 'PUT',
       headers: JSON_HEADERS,
       body: JSON.stringify(body),
     });
     if (res.status === 409) {
-      notify.error("읽은 문제가 있는 칸은 지울 수 없어요. 해당 칸을 빼고 다시 시도해 주세요.");
+      notify.error('읽은 문제가 있는 칸은 지울 수 없어요. 해당 칸을 빼고 다시 시도해 주세요.');
       return;
     }
     if (res.error) {
       notify.error(friendlyError(res.error));
       return;
     }
-    setMode("pick");
+    setMode('pick');
     setSelectedSegId(null);
     loadPage();
   }, [editSegments, pageId, loadPage]);
 
   const startEdit = useCallback(() => {
-    setMode("edit");
+    setMode('edit');
     setEditSegments(page?.segments || []);
   }, [page]);
 
   const cancelEdit = useCallback(() => {
-    setMode("pick");
+    setMode('pick');
     setSelectedSegId(null);
     setEditSegments(page?.segments || []);
   }, [page]);
 
   const toggleRange = useCallback(() => {
-    setRangeStart((cur) => (cur ? null : "pending"));
+    setRangeStart((cur) => (cur ? null : 'pending'));
   }, []);
 
   const addSegment = useCallback(() => {
@@ -280,7 +282,7 @@ export function usePhotoWorkshop(examId: string, pageId: string) {
 
   const handleSegmentClick = useCallback(
     (segId: string) => {
-      if (mode === "edit") {
+      if (mode === 'edit') {
         setSelectedSegId(segId);
         return;
       }

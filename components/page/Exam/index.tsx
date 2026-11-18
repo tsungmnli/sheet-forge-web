@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Group, Stack, Text } from "@mantine/core";
+import { useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Group, Stack, Text } from '@mantine/core';
 import {
   IconAlertCircle,
   IconCheck,
@@ -11,30 +11,30 @@ import {
   IconPlayerPlay,
   IconRefresh,
   IconUpload,
-} from "@tabler/icons-react";
+} from '@tabler/icons-react';
 
-import { PageLoader } from "@/components/common/PageLoader";
+import { PageLoader } from '@/components/common/PageLoader';
 import {
   flowStateFromExam,
   stepIndexFromState,
   type Exam,
   type Problem,
   type ProblemStatus,
-} from "@/lib/examData";
-import { useExam } from "@/lib/useExam";
-import { ExamHeader } from "./ExamHeader";
-import { NextTaskCard, type NextTask } from "./NextTaskCard";
-import { PhotoArea } from "./PhotoArea";
-import { ProblemList, type Filter, type RowAction } from "./ProblemList";
-import { StepIndicator } from "./StepIndicator";
-import { useExamActions } from "./hooks/useExamActions";
-import classes from "./Exam.module.css";
+} from '@/lib/examData';
+import { useExam } from '@/lib/useExam';
+import { ExamHeader } from './ExamHeader';
+import { NextTaskCard, type NextTask } from './NextTaskCard';
+import { PhotoArea } from './PhotoArea';
+import { ProblemList, type Filter, type RowAction } from './ProblemList';
+import { StepIndicator } from './StepIndicator';
+import { useExamActions } from './hooks/useExamActions';
+import classes from './Exam.module.css';
 
 const EMPTY_EXAM: Exam = {
-  id: "",
-  title: "",
-  studentName: "",
-  memo: "",
+  id: '',
+  title: '',
+  studentName: '',
+  memo: '',
   photos: [],
   problems: [],
 };
@@ -51,11 +51,12 @@ export function ExamClient({ examId }: { examId: string }) {
   const router = useRouter();
   const { exam: real, error, reload } = useExam(examId);
   const exam = real ?? EMPTY_EXAM;
-  const [title, setTitle] = useState("");
-  useEffect(() => {
-    if (real) setTitle(real.title);
-  }, [real]);
-  const [filter, setFilter] = useState<Filter>("all");
+  // 직접 고친 제목이 있으면 그걸, 없으면 서버 제목을 쓴다 (effect로 state를 동기화하지 않는다)
+  const [titleDraft, setTitleDraft] = useState<string | null>(null);
+  const title = titleDraft ?? real?.title ?? '';
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const [filter, setFilter] = useState<Filter>('all');
 
   const a = useExamActions(examId, title, reload);
 
@@ -64,7 +65,7 @@ export function ExamClient({ examId }: { examId: string }) {
 
   const sorted = useMemo(() => {
     const filtered =
-      filter === "all" ? exam.problems : exam.problems.filter((p) => p.status === filter);
+      filter === 'all' ? exam.problems : exam.problems.filter((p) => p.status === filter);
     return [...filtered].sort((x, y) => STATUS_ORDER[x.status] - STATUS_ORDER[y.status]);
   }, [exam.problems, filter]);
 
@@ -82,34 +83,34 @@ export function ExamClient({ examId }: { examId: string }) {
 
   const goProblem = (problemId: string) => router.push(`/exams/${examId}/problems/${problemId}`);
 
-  const unreadCount = exam.problems.filter((p) => p.status === "unread").length;
-  const needsReviewCount = exam.problems.filter((p) => p.status === "needs_review").length;
-  const failedCount = exam.problems.filter((p) => p.status === "failed").length;
+  const unreadCount = exam.problems.filter((p) => p.status === 'unread').length;
+  const needsReviewCount = exam.problems.filter((p) => p.status === 'needs_review').length;
+  const failedCount = exam.problems.filter((p) => p.status === 'failed').length;
   const readingDone = exam.problems.filter(
-    (p) => p.status !== "reading" && p.status !== "unread",
+    (p) => p.status !== 'reading' && p.status !== 'unread',
   ).length;
-  const firstNeedsReview = exam.problems.find((p) => p.status === "needs_review");
+  const firstNeedsReview = exam.problems.find((p) => p.status === 'needs_review');
 
   const nextTask = ((): NextTask | undefined => {
     switch (state) {
-      case "no_photo":
+      case 'no_photo':
         return {
           guide: a.uploading
             ? `사진을 올리는 중이에요 (${a.uploading.done}/${a.uploading.total})`
-            : "시험지 사진을 올려주세요.",
-          buttonLabel: "사진 올리기",
+            : '시험지 사진을 올려주세요.',
+          buttonLabel: '사진 올리기',
           buttonIcon: <IconUpload size={20} />,
-          onClick: () => a.fileInputRef.current?.click(),
+          onClick: () => fileInputRef.current?.click(),
         };
-      case "photo_no_pick":
+      case 'photo_no_pick':
         return {
-          guide: "사진에서 문제로 만들 부분을 골라주세요.",
-          buttonLabel: "문제 고르기",
+          guide: '사진에서 문제로 만들 부분을 골라주세요.',
+          buttonLabel: '문제 고르기',
           buttonIcon: <IconHandClick size={20} />,
           onClick: () =>
             exam.photos[0] && router.push(`/exams/${examId}/pages/${exam.photos[0].id}`),
         };
-      case "picked_unread":
+      case 'picked_unread':
         return {
           guide:
             unreadCount === exam.problems.length
@@ -119,31 +120,39 @@ export function ExamClient({ examId }: { examId: string }) {
           buttonIcon: <IconPlayerPlay size={20} />,
           onClick: () => a.readAll(),
         };
-      case "reading":
-        return { guide: "", progress: { done: readingDone, total: exam.problems.length } };
-      case "some_unconfirmed":
+      case 'reading':
+        return { guide: '', progress: { done: readingDone, total: exam.problems.length } };
+      case 'some_unconfirmed':
         return {
           guide: `확인할 문제가 ${needsReviewCount}개 남았어요.`,
-          buttonLabel: firstNeedsReview ? `${firstNeedsReview.number}번 확인하기` : "확인하기",
+          buttonLabel: firstNeedsReview ? `${firstNeedsReview.number}번 확인하기` : '확인하기',
           buttonIcon: <IconCheck size={20} />,
           onClick: () => firstNeedsReview?.problemId && goProblem(firstNeedsReview.problemId),
         };
-      case "has_failed":
+      case 'has_failed':
         return {
           guide: `${failedCount}문제를 읽지 못했어요.`,
-          buttonLabel: "다시 읽기",
+          buttonLabel: '다시 읽기',
           buttonIcon: <IconRefresh size={20} />,
           onClick: () =>
             a.rereadProblems(
               exam.problems
-                .filter((p) => p.status === "failed" && p.problemId)
+                .filter((p) => p.status === 'failed' && p.problemId)
                 .map((p) => p.problemId as string),
             ),
+          secondaryLabel: '모두 빼기',
+          onSecondary: () =>
+            a.removeProblems(
+              exam.problems
+                .filter((p) => p.status === 'failed' && p.problemId)
+                .map((p) => p.problemId as string),
+              true,
+            ),
         };
-      case "all_confirmed":
+      case 'all_confirmed':
         return {
-          guide: "모두 확인했어요.",
-          buttonLabel: "문제지 만들기",
+          guide: '모두 확인했어요.',
+          buttonLabel: '문제지 만들기',
           buttonIcon: <IconFileText size={20} />,
           onClick: a.makeWorksheet,
         };
@@ -152,25 +161,28 @@ export function ExamClient({ examId }: { examId: string }) {
 
   const rowAction = (p: Problem): RowAction => {
     switch (p.status) {
-      case "needs_review":
-        return { primaryLabel: "확인하기", onPrimary: () => p.problemId && goProblem(p.problemId) };
-      case "failed":
+      case 'needs_review':
+        return { primaryLabel: '확인하기', onPrimary: () => p.problemId && goProblem(p.problemId) };
+      case 'failed':
         return {
-          primaryLabel: "다시 읽기",
+          primaryLabel: '다시 읽기',
           onPrimary: () => p.problemId && a.rereadProblems([p.problemId]),
         };
-      case "unread":
-        return { primaryLabel: "읽기 시작", onPrimary: () => a.readAll([p.id]) };
-      case "reading":
-        return { primaryLabel: "읽는 중…", onPrimary: () => {} };
-      case "confirmed":
-        return { primaryLabel: "다시 보기", onPrimary: () => p.problemId && goProblem(p.problemId) };
+      case 'unread':
+        return { primaryLabel: '읽기 시작', onPrimary: () => a.readAll([p.id]) };
+      case 'reading':
+        return { primaryLabel: '읽는 중…', onPrimary: () => {} };
+      case 'confirmed':
+        return {
+          primaryLabel: '다시 보기',
+          onPrimary: () => p.problemId && goProblem(p.problemId),
+        };
     }
   };
 
   return (
     <Stack gap="lg" className={classes.content}>
-      <ExamHeader exam={{ ...exam, title }} onTitleChange={setTitle} />
+      <ExamHeader exam={{ ...exam, title }} onTitleChange={setTitleDraft} />
       <StepIndicator currentStep={step} />
       <NextTaskCard task={nextTask} loading={a.busy || !!a.uploading} />
       <ProblemList
@@ -179,10 +191,12 @@ export function ExamClient({ examId }: { examId: string }) {
         filter={filter}
         onFilter={setFilter}
         rowAction={rowAction}
+        onRemove={(p) => p.problemId && a.removeProblems([p.problemId])}
+        disabled={a.busy}
       />
 
       <input
-        ref={a.fileInputRef}
+        ref={fileInputRef}
         type="file"
         accept="image/*"
         multiple
@@ -190,7 +204,7 @@ export function ExamClient({ examId }: { examId: string }) {
         onChange={a.onFilesChosen}
       />
       <input
-        ref={a.cameraInputRef}
+        ref={cameraInputRef}
         type="file"
         accept="image/*"
         capture="environment"
@@ -201,8 +215,8 @@ export function ExamClient({ examId }: { examId: string }) {
         photos={exam.photos}
         uploading={a.uploading}
         onOpen={(pageId) => router.push(`/exams/${examId}/pages/${pageId}`)}
-        onAdd={() => a.fileInputRef.current?.click()}
-        onCamera={() => a.cameraInputRef.current?.click()}
+        onAdd={() => fileInputRef.current?.click()}
+        onCamera={() => cameraInputRef.current?.click()}
         onDrop={a.handleUpload}
         onDelete={a.deletePhoto}
         deletingId={a.deletingPhotoId}

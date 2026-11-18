@@ -26,6 +26,12 @@
   background: var(--mantine-color-yellow-1);
 }
 
+.inline[data-focused="true"] {
+  outline: 2px solid var(--mantine-color-blue-5);
+  outline-offset: 1px;
+  background: light-dark(var(--mantine-color-blue-0), var(--mantine-color-blue-9));
+}
+
 .delete {
   display: inline-flex;
   color: var(--mantine-color-gray-4);

@@ -204,6 +204,8 @@ export function ExamClient({ examId }: { examId: string }) {
         onAdd={() => a.fileInputRef.current?.click()}
         onCamera={() => a.cameraInputRef.current?.click()}
         onDrop={a.handleUpload}
+        onDelete={a.deletePhoto}
+        deletingId={a.deletingPhotoId}
       />
     </Stack>
   );

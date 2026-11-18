@@ -11,6 +11,7 @@ export interface Problem {
   status: ProblemStatus;
   content: string;
   problemId?: string | null;
+  failReason?: string | null; // 읽기 실패 사유(실패한 문제만)
 }
 
 export interface Photo {

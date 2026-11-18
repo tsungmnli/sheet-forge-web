@@ -9,6 +9,7 @@ import {
 } from "@tabler/icons-react";
 
 import { InlineView } from "@/components/common/ProblemInline";
+import { choiceBlockPrefix, choiceInlinePath } from "@/lib/stemPath";
 import type { ChoicesOut, MathResultOut } from "@/lib/types";
 
 import classes from "./Problem.module.css";
@@ -42,6 +43,7 @@ export function ChoiceSection({
     setEditingInline,
     showMathEditor,
     setShowMathEditor,
+    focusedPath,
   } = view;
   const {
     addChoice,
@@ -101,7 +103,7 @@ export function ChoiceSection({
         <Paper
           key={ci}
           className={classes.stemBlock}
-          data-hint={hintPaths.has(`choices.${ci}`)}
+          data-hint={[...hintPaths].some((p) => p.startsWith(choiceBlockPrefix(ci)))}
         >
           <Group gap="xs" mb="xs">
             <Text fw={600} c="dimmed" w={24}>
@@ -145,11 +147,13 @@ export function ChoiceSection({
               </Text>
             )}
             {choice.map((il, ii) => {
-              const path = `choices.${ci}.${ii}`;
+              const path = choiceInlinePath(ci, ii);
               return (
                 <InlineView
                   key={ii}
                   inline={il}
+                  path={path}
+                  isFocused={focusedPath === path}
                   mathResult={mathResults[path]}
                   isHint={hintPaths.has(path)}
                   isEditing={editingInline === path}

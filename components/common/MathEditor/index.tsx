@@ -31,6 +31,9 @@ const BUTTONS: { label: string; snippet: string }[] = [
   { label: "괄호", snippet: "\\left(#@\\right)" },
 ];
 
+// 하단 고정 바(BottomBar)가 차지하는 높이. 편집기가 이 아래로 내려가 가려지지 않게 한다.
+const BOTTOM_BAR_PX = 80;
+
 // 빈 칸 표시(\placeholder)가 저장값에 섞이지 않게 걷어낸다.
 function cleanLatex(s: string): string {
   return s.replace(/\\placeholder(\[[^\]]*\])?\{([^}]*)\}/g, "$2").trim();
@@ -51,6 +54,26 @@ export function MathEditor({ initialLatex, onSave, onCancel }: MathEditorProps) 
     if (!host) return;
     let cancelled = false;
     let mf: MathfieldElement | null = null;
+    let kbListener: (() => void) | null = null;
+
+    // 편집기(와 가상 키보드)가 하단 바·키보드에 가리지 않도록 화면 안으로 스크롤한다.
+    // host의 부모가 편집기 상자(Paper)다.
+    const reveal = () => {
+      const box = host.parentElement;
+      if (!box) return;
+      const kb = window.mathVirtualKeyboard;
+      const kbOpen = !!kb?.visible;
+      // 키보드가 열려 있는 동안만 페이지 아래에 키보드 높이만큼 여백을 둬서, 맨 아래 칸도 위로 올려 볼 수 있게 한다.
+      document.body.style.paddingBottom = kbOpen ? `${Math.ceil(kb.boundingRect.height)}px` : "";
+      const bottomLimit =
+        Math.min(window.innerHeight - BOTTOM_BAR_PX, kbOpen ? kb.boundingRect.top : Infinity) - 8;
+      const r = box.getBoundingClientRect();
+      if (r.bottom > bottomLimit) {
+        window.scrollBy({ top: r.bottom - bottomLimit, behavior: "smooth" });
+      } else if (r.top < 8) {
+        window.scrollBy({ top: r.top - 8, behavior: "smooth" });
+      }
+    };
 
     // mathlive는 import 시점에 브라우저 전역(window 등)을 쓰므로 서버 렌더링에서 불러오면 안 된다.
     // 편집기가 실제로 열릴 때만 동적으로 불러온다.
@@ -68,10 +91,21 @@ export function MathEditor({ initialLatex, onSave, onCancel }: MathEditorProps) 
       host.appendChild(mf);
       fieldRef.current = mf;
       mf.focus();
+
+      // 가상 키보드를 켜고 끌 때(높이가 바뀔 때)마다 가려지지 않는지 다시 본다.
+      kbListener = () => requestAnimationFrame(reveal);
+      window.mathVirtualKeyboard?.addEventListener("geometrychange", kbListener);
+      requestAnimationFrame(reveal);
     });
 
     return () => {
       cancelled = true;
+      if (kbListener) {
+        window.mathVirtualKeyboard?.removeEventListener("geometrychange", kbListener);
+      }
+      // 가상 키보드는 페이지에 하나뿐인 전역 요소라서, 편집기를 닫을 때 같이 닫아 주지 않으면 화면에 남는다.
+      window.mathVirtualKeyboard?.hide();
+      document.body.style.paddingBottom = "";
       mf?.remove();
       fieldRef.current = null;
     };

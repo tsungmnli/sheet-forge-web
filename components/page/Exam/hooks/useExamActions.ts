@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type ChangeEvent } from "reac
 import { useRouter } from "next/navigation";
 
 import { apiFetch, friendlyError } from "@/lib/api";
+import { confirmDialog } from "@/lib/confirm";
 import { notify } from "@/lib/notify";
 import type { ReadOut } from "@/lib/types";
 import { uploadPhotos } from "@/lib/upload";
@@ -14,6 +15,7 @@ const LIMIT_MESSAGE = "오늘 읽기 한도를 다 썼어요. 내일 다시 시�
 export function useExamActions(examId: string, title: string, reload: () => void) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [deletingPhotoId, setDeletingPhotoId] = useState<string | null>(null);
   const [uploading, setUploading] = useState<{ done: number; total: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -85,6 +87,33 @@ export function useExamActions(examId: string, title: string, reload: () => void
     router.push(`/worksheets/${res.data.id}`);
   }, [busy, examId, title, router]);
 
+  // 올린 사진 하나를 지운다. 그 사진에서 고른 문제도 함께 휴지통으로 가고, 휴지통에서 되살릴 수 있다.
+  const deletePhoto = useCallback(
+    async (pageId: string, problemCount: number) => {
+      if (busy || deletingPhotoId) return;
+      const yes = await confirmDialog({
+        title: "사진을 지울까요?",
+        message:
+          problemCount > 0
+            ? `이 사진에서 고른 문제 ${problemCount}개도 함께 휴지통으로 가요. 휴지통에서 되살릴 수 있어요.`
+            : "휴지통으로 옮겨요. 휴지통에서 되살릴 수 있어요.",
+        confirmLabel: "지우기",
+        danger: true,
+      });
+      if (!yes) return;
+      setDeletingPhotoId(pageId);
+      const res = await apiFetch(`/pages/${pageId}`, { method: "DELETE" });
+      setDeletingPhotoId(null);
+      if (res.error) {
+        notify.error(friendlyError(res.error));
+        return;
+      }
+      notify.success("사진을 휴지통으로 옮겼어요.");
+      reload();
+    },
+    [busy, deletingPhotoId, reload],
+  );
+
   const handleUpload = useCallback(
     async (files: File[]) => {
       if (files.length === 0 || uploading) return;
@@ -125,6 +154,8 @@ export function useExamActions(examId: string, title: string, reload: () => void
     readAll,
     rereadProblems,
     makeWorksheet,
+    deletePhoto,
+    deletingPhotoId,
     handleUpload,
     onFilesChosen,
   };

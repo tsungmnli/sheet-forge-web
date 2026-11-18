@@ -1,0 +1,215 @@
+"use client";
+
+import { useState } from "react";
+import {
+  ActionIcon,
+  Button,
+  Group,
+  Stack,
+  Text,
+  TextInput,
+} from "@mantine/core";
+import { IconArrowDown, IconArrowUp, IconPlus, IconTrash } from "@tabler/icons-react";
+
+import { InlineView } from "@/components/common/ProblemInline";
+import { stemBoxPath } from "@/lib/stemPath";
+import type { BoxBlockOut, MathResultOut } from "@/lib/types";
+
+import classes from "./Problem.module.css";
+import type { useProblemEditing } from "./hooks/useProblemEditing";
+import type { useProblemView } from "./hooks/useProblemView";
+
+type View = ReturnType<typeof useProblemView>;
+type Editing = ReturnType<typeof useProblemEditing>;
+
+const MAX_BOX_PARAGRAPHS = 30;
+
+interface Props {
+  bi: number;
+  block: BoxBlockOut;
+  hintPaths: Set<string>;
+  mathResults: Record<string, MathResultOut>;
+  view: View;
+  editing: Editing;
+}
+
+// 상자 블록: 제목(클릭하여 수정)과 여러 줄. 각 줄은 문단과 같은 조각 편집.
+export function BoxBlock({
+  bi,
+  block,
+  hintPaths,
+  mathResults,
+  view,
+  editing,
+}: Props) {
+  const { editingInline, setEditingInline, showMathEditor, setShowMathEditor, focusedPath } =
+    view;
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleVal, setTitleVal] = useState(block.title);
+
+  const {
+    editBoxTitle,
+    addBoxParagraph,
+    deleteBoxParagraph,
+    moveBoxParagraph,
+    editBoxInline,
+    addBoxInline,
+    deleteBoxInline,
+  } = editing;
+
+  return (
+    <div className={classes.stemBox}>
+      {editingTitle ? (
+        <TextInput
+          size="xs"
+          value={titleVal}
+          maxLength={20}
+          placeholder="<보기>"
+          autoFocus
+          styles={{ input: { textAlign: "center" } }}
+          onChange={(e) => setTitleVal(e.currentTarget.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+              editBoxTitle(bi, titleVal);
+              setEditingTitle(false);
+            }
+            if (e.key === "Escape") setEditingTitle(false);
+          }}
+          onBlur={() => {
+            editBoxTitle(bi, titleVal);
+            setEditingTitle(false);
+          }}
+        />
+      ) : (
+        <Text
+          ta="center"
+          fw={600}
+          style={{ cursor: "pointer" }}
+          onClick={() => {
+            setTitleVal(block.title);
+            setEditingTitle(true);
+          }}
+        >
+          {block.title || "<보기>"}
+        </Text>
+      )}
+
+      <Stack gap="xs" mt="xs">
+        {block.paragraphs.map((para, p) => (
+          <div key={p}>
+            <Group gap={4} mb={4}>
+              <ActionIcon
+                variant="subtle"
+                color="gray"
+                size="sm"
+                aria-label="위로"
+                disabled={p === 0}
+                onClick={() => moveBoxParagraph(bi, p, -1)}
+              >
+                <IconArrowUp size={13} />
+              </ActionIcon>
+              <ActionIcon
+                variant="subtle"
+                color="gray"
+                size="sm"
+                aria-label="아래로"
+                disabled={p === block.paragraphs.length - 1}
+                onClick={() => moveBoxParagraph(bi, p, 1)}
+              >
+                <IconArrowDown size={13} />
+              </ActionIcon>
+              <ActionIcon
+                variant="subtle"
+                color="red"
+                size="sm"
+                aria-label="줄 삭제"
+                disabled={block.paragraphs.length <= 1}
+                onClick={() => deleteBoxParagraph(bi, p)}
+              >
+                <IconTrash size={13} />
+              </ActionIcon>
+            </Group>
+
+            <div className={classes.stemInlines}>
+              {para.inlines.length === 0 && (
+                <Text span size="sm" c="dimmed">
+                  내용을 추가해 주세요
+                </Text>
+              )}
+              {para.inlines.map((il, ii) => {
+                const path = stemBoxPath(bi, p, ii);
+                return (
+                  <InlineView
+                    key={ii}
+                    inline={il}
+                    path={path}
+                    isFocused={focusedPath === path}
+                    mathResult={mathResults[path]}
+                    isHint={hintPaths.has(path)}
+                    isEditing={editingInline === path}
+                    isMathEditing={showMathEditor === path}
+                    onEdit={() => setEditingInline(path)}
+                    onEditMath={() => {
+                      setShowMathEditor(path);
+                      setEditingInline(null);
+                    }}
+                    onSaveText={(v) => {
+                      editBoxInline(bi, p, ii, { t: "text", v });
+                      setEditingInline(null);
+                    }}
+                    onSaveMath={(latex) => {
+                      editBoxInline(bi, p, ii, { t: "math", latex });
+                      setShowMathEditor(null);
+                    }}
+                    onCancel={() => {
+                      setEditingInline(null);
+                      setShowMathEditor(null);
+                    }}
+                    onDelete={() => deleteBoxInline(bi, p, ii)}
+                  />
+                );
+              })}
+            </div>
+
+            <Group gap={4} mt={4}>
+              <Button
+                size="compact-sm"
+                variant="light"
+                color="gray"
+                onClick={() => addBoxInline(bi, p, { t: "text", v: "" })}
+              >
+                글 추가
+              </Button>
+              <Button
+                size="compact-sm"
+                variant="light"
+                color="gray"
+                onClick={() => addBoxInline(bi, p, { t: "math", latex: "" })}
+              >
+                수식 추가
+              </Button>
+            </Group>
+          </div>
+        ))}
+      </Stack>
+
+      <Group gap={4} mt="xs" justify="center">
+        <Button
+          size="compact-sm"
+          variant="light"
+          color="gray"
+          leftSection={<IconPlus size={14} />}
+          disabled={block.paragraphs.length >= MAX_BOX_PARAGRAPHS}
+          onClick={() => addBoxParagraph(bi)}
+        >
+          줄 추가
+        </Button>
+        {block.paragraphs.length >= MAX_BOX_PARAGRAPHS && (
+          <Text size="xs" c="dimmed">
+            최대 {MAX_BOX_PARAGRAPHS}줄
+          </Text>
+        )}
+      </Group>
+    </div>
+  );
+}

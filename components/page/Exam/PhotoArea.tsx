@@ -8,7 +8,7 @@ import {
   Text,
   ThemeIcon,
 } from "@mantine/core";
-import { IconCamera, IconPhotoPlus, IconUpload } from "@tabler/icons-react";
+import { IconCamera, IconPhotoPlus, IconTrash, IconUpload } from "@tabler/icons-react";
 
 import type { Exam } from "@/lib/examData";
 import classes from "./Exam.module.css";
@@ -20,9 +20,20 @@ interface Props {
   onAdd: () => void;
   onCamera: () => void;
   onDrop: (files: File[]) => void;
+  onDelete: (pageId: string, problemCount: number) => void;
+  deletingId: string | null;
 }
 
-export function PhotoArea({ photos, uploading, onOpen, onAdd, onCamera, onDrop }: Props) {
+export function PhotoArea({
+  photos,
+  uploading,
+  onOpen,
+  onAdd,
+  onCamera,
+  onDrop,
+  onDelete,
+  deletingId,
+}: Props) {
   const uploadLabel = (idle: string) =>
     uploading ? `올리는 중 ${uploading.done}/${uploading.total}` : idle;
 
@@ -133,9 +144,24 @@ export function PhotoArea({ photos, uploading, onOpen, onAdd, onCamera, onDrop }
                   {regions.length > 0 ? `문제 ${regions.length}개 골랐어요` : "고른 문제 없음"}
                 </Text>
               </Group>
-              <Button variant="light" size="xs" onClick={() => onOpen(ph.id)}>
-                문제 영역 보고 고치기
-              </Button>
+              <Group gap={6} wrap="nowrap">
+                <Button variant="light" size="xs" style={{ flex: 1 }} onClick={() => onOpen(ph.id)}>
+                  문제 영역 보고 고치기
+                </Button>
+                <Button
+                  variant="subtle"
+                  color="red"
+                  size="xs"
+                  px={8}
+                  aria-label={`${ph.name} 사진 지우기`}
+                  title="사진 지우기"
+                  loading={deletingId === ph.id}
+                  disabled={!!deletingId || !!uploading}
+                  onClick={() => onDelete(ph.id, regions.length)}
+                >
+                  <IconTrash size={16} />
+                </Button>
+              </Group>
             </Stack>
           );
         })}

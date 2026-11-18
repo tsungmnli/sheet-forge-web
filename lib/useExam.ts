@@ -60,6 +60,7 @@ export function useExam(examId: string) {
           status: STATUS[it.state],
           content: it.preview_tex || it.preview,
           problemId: it.problem_id,
+          failReason: it.fail_reason ?? null,
         })
       ),
     });

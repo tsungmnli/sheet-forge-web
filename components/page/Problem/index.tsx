@@ -1,6 +1,6 @@
 "use client";
 
-import { Paper, SimpleGrid, Stack, Text } from "@mantine/core";
+import { Alert, Paper, SimpleGrid, Stack, Text } from "@mantine/core";
 
 import { BottomBar } from "./BottomBar";
 import { ChoiceSection } from "./ChoiceSection";
@@ -61,9 +61,21 @@ export function ProblemClient({
 
         <Paper withBorder radius="md" p="md">
           <Stack gap="lg">
+            {/* 다시 읽기만 실패해서 이전에 읽은 내용을 그대로 둔 경우 */}
+            {!isFailed && !isRecognizing && !isConfirmed && problem.fail_reason && (
+              <Alert color="yellow" variant="light" title="다시 읽기에 실패했어요">
+                이전에 읽은 내용은 그대로 두었어요. {problem.fail_reason}
+              </Alert>
+            )}
+
             {(isFailed || isEmpty) && (
               <Stack gap={4} align="center" py="lg">
                 <Text>읽은 결과가 없어요.</Text>
+                {isFailed && problem.fail_reason && (
+                  <Text c="red.7" size="sm" ta="center">
+                    {problem.fail_reason}
+                  </Text>
+                )}
                 <Text c="dimmed" size="sm">
                   원본을 보며 직접 입력해 주세요.
                 </Text>
@@ -98,7 +110,8 @@ export function ProblemClient({
               blockers={blockers}
               hints={hints}
               isConfirmed={isConfirmed}
-              onFocusBlocker={view.setFocusedBlockerPath}
+              onFocusBlocker={(path) => view.focusInline(path, true)}
+              onFocusHint={(path) => view.focusInline(path, false)}
             />
           </Stack>
         </Paper>

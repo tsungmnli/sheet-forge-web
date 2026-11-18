@@ -152,6 +152,7 @@ export interface ProblemListItemOut {
   preview: string;
   preview_tex?: string;
   badges: string[];
+  fail_reason?: string | null; // state가 failed일 때만: 왜 읽지 못했는지
 }
 
 export interface ProblemListOut {
@@ -238,9 +239,43 @@ export interface ImageInlineOut {
 
 export type InlineOut = TextInlineOut | MathInlineOut | ImageInlineOut;
 
-export interface StemBlockOut {
-  type: string;
+export interface ParagraphBlockOut {
+  type: "paragraph";
   inlines: InlineOut[];
+}
+
+export interface BoxBlockOut {
+  type: "box";
+  title: string;
+  paragraphs: { inlines: InlineOut[] }[];
+}
+
+export interface TableBlockOut {
+  type: "table";
+  rows: InlineOut[][][];
+}
+
+export interface UnknownBlockOut {
+  type: string;
+  [key: string]: unknown;
+}
+
+export type StemBlockOut =
+  | ParagraphBlockOut
+  | BoxBlockOut
+  | TableBlockOut
+  | UnknownBlockOut;
+
+export function isParagraphBlock(b: StemBlockOut): b is ParagraphBlockOut {
+  return b.type === "paragraph";
+}
+
+export function isBoxBlock(b: StemBlockOut): b is BoxBlockOut {
+  return b.type === "box";
+}
+
+export function isTableBlock(b: StemBlockOut): b is TableBlockOut {
+  return b.type === "table";
 }
 
 export interface ChoicesOut {
@@ -302,6 +337,7 @@ export interface ProblemOut {
   hints: HintOut[];
   removed_figures?: RemovedFigureOut[];   // 지웠지만 되살릴 수 있는 그림
   checks: ChecksOut;
+  fail_reason?: string | null; // 읽기에 실패했을 때만: 왜 실패했는지
   poll_after_ms?: number | null;
 }
 
@@ -337,10 +373,7 @@ export interface MathCheckOut {
   results: MathResultOut[];
 }
 
-export interface StemBlockIn {
-  type: string;
-  inlines: InlineOut[];
-}
+export type StemBlockIn = StemBlockOut;
 
 export interface ChoicesIn {
   items: InlineOut[][];

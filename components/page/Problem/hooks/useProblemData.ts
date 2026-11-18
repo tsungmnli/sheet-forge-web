@@ -151,7 +151,15 @@ export function useProblemData(examId: string, problemId: string) {
         return;
       }
       if (res.data) {
-        updateEtag(res.etag || res.data.version.toString());
+        const saved = res.data;
+        updateEtag(res.etag || saved.version.toString());
+        // 서버가 방금 저장한 내용으로 다시 계산한 점검 결과(blockers·hints)를 반영한다.
+        // 이걸 안 하면 '지원 안 함' 수식을 지워도 처음 불러온 안내가 새로고침 전까지 남는다.
+        // content·version은 건드리지 않는다(저장 중에 더 고친 내용을 덮어쓰거나, 서버 데이터로 오인해 자동 저장이 멈추는 것을 막기 위해).
+        setBlockers(saved.checks.blockers);
+        setProblem((cur) =>
+          cur ? { ...cur, hints: saved.hints, checks: saved.checks } : cur,
+        );
         setSaveState("saved");
       } else if (res.error) {
         setError(friendlyError(res.error));

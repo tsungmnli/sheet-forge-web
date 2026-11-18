@@ -4,11 +4,20 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { apiFetch, friendlyError } from "@/lib/api";
-import type {
-  MathCheckIn,
-  MathCheckOut,
-  MathResultOut,
-  ProblemOut,
+import {
+  choiceInlinePath,
+  stemBoxPath,
+  stemInlinePath,
+  stemTableCellPath,
+} from "@/lib/stemPath";
+import {
+  isBoxBlock,
+  isParagraphBlock,
+  isTableBlock,
+  type MathCheckIn,
+  type MathCheckOut,
+  type MathResultOut,
+  type ProblemOut,
 } from "@/lib/types";
 import type { useProblemData } from "./useProblemData";
 
@@ -41,17 +50,40 @@ export function useProblemActions(examId: string, data: ProblemData) {
     if (!problem) return;
     const items: { latex: string; path: string }[] = [];
     problem.content.stem.forEach((blk, bi) => {
-      blk.inlines.forEach((il, ii) => {
-        if (il.t === "math" && il.latex) {
-          items.push({ latex: il.latex, path: `stem.${bi}.${ii}` });
-        }
-      });
+      if (isParagraphBlock(blk)) {
+        blk.inlines.forEach((il, ii) => {
+          if (il.t === "math" && il.latex) {
+            items.push({ latex: il.latex, path: stemInlinePath(bi, ii) });
+          }
+        });
+      } else if (isBoxBlock(blk)) {
+        blk.paragraphs.forEach((para, p) => {
+          para.inlines.forEach((il, ii) => {
+            if (il.t === "math" && il.latex) {
+              items.push({ latex: il.latex, path: stemBoxPath(bi, p, ii) });
+            }
+          });
+        });
+      } else if (isTableBlock(blk)) {
+        blk.rows.forEach((row, r) => {
+          row.forEach((cell, c) => {
+            cell.forEach((il, ii) => {
+              if (il.t === "math" && il.latex) {
+                items.push({
+                  latex: il.latex,
+                  path: stemTableCellPath(bi, r, c, ii),
+                });
+              }
+            });
+          });
+        });
+      }
     });
     if (problem.content.choices) {
       problem.content.choices.items.forEach((choice, ci) => {
         choice.forEach((il, ii) => {
           if (il.t === "math" && il.latex) {
-            items.push({ latex: il.latex, path: `choices.${ci}.${ii}` });
+            items.push({ latex: il.latex, path: choiceInlinePath(ci, ii) });
           }
         });
       });

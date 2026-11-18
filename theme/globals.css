@@ -1,3 +1,8 @@
+/* mathlive 가상 키보드를 하단 고정 바(z-index 200)보다 위에 둔다. 그렇지 않으면 키보드 아래쪽 줄이 바에 가려진다. */
+:root {
+  --keyboard-zindex: 300;
+}
+
 html {
   height: 100%;
 }

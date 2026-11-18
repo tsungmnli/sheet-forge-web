@@ -79,13 +79,19 @@ export function ProblemList({ total, problems, filter, onFilter, rowAction }: Pr
               >
                 {STATUS_LABEL[p.status]}
               </Badge>
-              <div
-                className={classes.previewLine}
-                style={{ flex: 1, minWidth: 0 }}
-                dangerouslySetInnerHTML={{
-                  __html: p.content ? renderMixedContent(p.content) : UNREAD_HTML,
-                }}
-              />
+              {p.status === "failed" && !p.content ? (
+                <Text size="sm" c="red.7" style={{ flex: 1, minWidth: 0 }}>
+                  {p.failReason || "읽지 못했어요. 다시 읽어 보세요."}
+                </Text>
+              ) : (
+                <div
+                  className={classes.previewLine}
+                  style={{ flex: 1, minWidth: 0 }}
+                  dangerouslySetInnerHTML={{
+                    __html: p.content ? renderMixedContent(p.content) : UNREAD_HTML,
+                  }}
+                />
+              )}
               <Button
                 variant="light"
                 size="sm"

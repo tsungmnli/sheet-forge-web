@@ -22,7 +22,7 @@ export function NextTaskCard({ task, loading }: { task?: NextTask; loading: bool
         <div style={{ flex: 1, minWidth: 240 }}>
           {progress ? (
             <>
-              <Text size="xl" fw={700} c="blue.8" mb={6}>
+              <Text size="xl" fw={700} c="brand.8" mb={6}>
                 {progress.done} / {progress.total} 읽는 중이에요
               </Text>
               <Progress

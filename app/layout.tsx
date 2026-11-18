@@ -24,6 +24,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="ko" {...mantineHtmlProps}>
       <head>
         <ColorSchemeScript />
+        <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@latest/dist/web/variable/pretendardvariable.min.css"
+        />
       </head>
       <body>
         <MantineProvider theme={theme}>

@@ -1,5 +1,12 @@
 export const API_BASE = "/api";
 
+export const authPaths = new Set([
+  "/login",
+  "/signup",
+  "/forgot-password",
+  "/reset-password",
+]);
+
 export interface ApiError {
   code: string;
   message: string;
@@ -36,6 +43,28 @@ export async function apiFetch<T>(
       ...(opts?.headers || {}),
     },
   });
+
+  if (res.status === 401) {
+    const text0 = await res.text();
+    let body0: unknown = null;
+    if (text0) {
+      try { body0 = JSON.parse(text0); } catch { body0 = text0; }
+    }
+    const parsed0 = parseErrorBody(body0);
+    if (parsed0?.code === "NOT_AUTHENTICATED") {
+      if (typeof window !== "undefined") {
+        const p = window.location.pathname;
+        if (!authPaths.has(p)) {
+          const next = window.location.pathname + window.location.search;
+          window.location.replace(`/login?next=${encodeURIComponent(next)}`);
+        }
+      }
+    }
+    if (parsed0) {
+      return { data: null, error: parsed0, status: 401, etag: res.headers.get("ETag") };
+    }
+    return { data: null, error: { code: "UNKNOWN", message: "문제가 생겼어요. 잠시 후 다시 시도해 주세요." }, status: 401, etag: res.headers.get("ETag") };
+  }
 
   const etag = res.headers.get("ETag");
 

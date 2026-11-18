@@ -1,0 +1,16 @@
+.title {
+  text-align: center;
+}
+
+.error {
+  text-align: center;
+}
+
+.link {
+  text-align: center;
+  display: block;
+}
+
+.hint {
+  line-height: 1.5;
+}

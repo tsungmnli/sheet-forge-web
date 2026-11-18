@@ -12,23 +12,23 @@
   gap: var(--mantine-spacing-sm);
   padding: 12px 16px;
   border-radius: var(--mantine-radius-md);
-  border: 1.5px solid var(--mantine-color-gray-3);
-  background: var(--mantine-color-gray-0);
-  transition: all 0.2s ease;
+  border: 1px solid var(--mantine-color-default-border);
+  background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
+  transition: border-color 200ms ease, background-color 200ms ease;
 }
 
 .step[data-state="active"] {
-  background: var(--mantine-color-blue-0);
-  border-color: var(--mantine-color-blue-6);
+  background: var(--mantine-primary-color-light);
+  border-color: var(--mantine-primary-color-filled);
 }
 
 .step[data-state="done"] {
-  background: var(--mantine-color-green-0);
-  border-color: var(--mantine-color-green-6);
+  background: light-dark(var(--mantine-color-green-0), var(--mantine-color-green-9));
+  border-color: light-dark(var(--mantine-color-green-6), var(--mantine-color-green-5));
 }
 
 .step[data-state="locked"] {
-  opacity: 0.55;
+  opacity: 0.5;
 }
 
 .stepDot {
@@ -40,17 +40,17 @@
   justify-content: center;
   flex-shrink: 0;
   background: var(--mantine-color-gray-4);
-  color: var(--mantine-color-white);
+  color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-0));
   font-weight: 700;
   font-size: 14px;
 }
 
 .step[data-state="active"] .stepDot {
-  background: var(--mantine-color-blue-6);
+  background: var(--mantine-primary-color-filled);
 }
 
 .step[data-state="done"] .stepDot {
-  background: var(--mantine-color-green-6);
+  background: light-dark(var(--mantine-color-green-6), var(--mantine-color-green-5));
 }
 
 .stepLabel {
@@ -61,15 +61,15 @@
 .stepLine {
   width: 20px;
   height: 2px;
-  background: var(--mantine-color-gray-3);
+  background: var(--mantine-color-default-border);
   margin: 0 2px;
   align-self: center;
 }
 
 /* 다음 할 일 카드 */
 .nextTask {
-  background: linear-gradient(135deg, var(--mantine-color-blue-0), var(--mantine-color-gray-0));
-  border-color: var(--mantine-color-blue-2);
+  background: light-dark(var(--mantine-primary-color-light), var(--mantine-color-dark-6));
+  border-color: var(--mantine-primary-color-filled);
 }
 
 /* 문제 목록 */
@@ -101,7 +101,7 @@
 /* 사진 */
 .dropzone {
   border-style: dashed;
-  background: var(--mantine-color-blue-0);
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
 }
 
 .photo {

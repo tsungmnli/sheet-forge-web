@@ -24,7 +24,7 @@ export function CropPane({ cropUrl, view }: Props) {
         justify="space-between"
         px="md"
         py={6}
-        style={{ borderBottom: "1px solid var(--mantine-color-gray-2)" }}
+        style={{ borderBottom: "1px solid var(--mantine-color-default-border)" }}
       >
         <Text size="sm" fw={600} c="dimmed">
           원본

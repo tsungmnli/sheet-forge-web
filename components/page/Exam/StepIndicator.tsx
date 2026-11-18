@@ -32,7 +32,7 @@ export function StepIndicator({ currentStep }: { currentStep: number }) {
               <Text
                 size="sm"
                 fw={state === "locked" ? 500 : 700}
-                c={state === "active" ? "blue.7" : state === "done" ? "green.7" : "dimmed"}
+                c={state === "active" ? "brand.7" : state === "done" ? "green.7" : "dimmed"}
                 className={classes.stepLabel}
               >
                 {label}

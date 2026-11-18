@@ -52,7 +52,7 @@ export function StemSection({
   return (
     <Stack gap="sm">
       <Group justify="space-between">
-        <Text fw={600} c="gray.7">
+        <Text fw={600} c="dimmed">
           본문
         </Text>
         <Button

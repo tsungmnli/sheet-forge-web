@@ -28,13 +28,13 @@ export function CorrectionPanel({ hasBoth, showOriginal, onShowOriginal }: Props
         </Group>
       </UnstyledButton>
       {opened && (
-        <Stack gap="sm" p="md" style={{ borderTop: "1px solid var(--mantine-color-gray-2)" }}>
+        <Stack gap="sm" p="md" style={{ borderTop: "1px solid var(--mantine-color-default-border)" }}>
           {hasBoth ? (
             <>
               <Group gap="xs">
                 <Button
                   variant={showOriginal ? "light" : "filled"}
-                  color={showOriginal ? "gray" : "blue"}
+                  color={showOriginal ? "gray" : "brand"}
                   leftSection={<IconEye size={16} />}
                   onClick={() => onShowOriginal(false)}
                 >
@@ -42,7 +42,7 @@ export function CorrectionPanel({ hasBoth, showOriginal, onShowOriginal }: Props
                 </Button>
                 <Button
                   variant={showOriginal ? "filled" : "light"}
-                  color={showOriginal ? "blue" : "gray"}
+                  color={showOriginal ? "brand" : "gray"}
                   leftSection={<IconEyeOff size={16} />}
                   onClick={() => onShowOriginal(true)}
                 >

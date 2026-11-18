@@ -28,7 +28,7 @@ export function ProblemBanners({ error, onCloseError, isRecognizing }: Props) {
         </Alert>
       )}
       {isRecognizing && (
-        <Alert color="blue" variant="light" icon={<Loader size={18} />}>
+        <Alert color="brand" variant="light" icon={<Loader size={18} />}>
           문제를 읽는 중이에요. 잠시만 기다려 주세요.
         </Alert>
       )}

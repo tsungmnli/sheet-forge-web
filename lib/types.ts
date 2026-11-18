@@ -355,3 +355,19 @@ export interface FigureEditIn {
   placement?: "after_stem" | "after_choices" | null;
   width_mm?: number | null;
 }
+
+export interface MeOut {
+  id: string;
+  display_name: string;
+  email?: string;
+}
+
+export interface InviteOut {
+  email: string;
+}
+
+export interface AuthUserOut {
+  id: string;
+  display_name: string;
+  email: string;
+}

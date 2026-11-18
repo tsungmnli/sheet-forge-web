@@ -59,7 +59,7 @@ export function FigureSection({
 
   return (
     <Stack gap="xs">
-      <Text fw={600} c="gray.7">
+      <Text fw={600} c="dimmed">
         그림
       </Text>
 
@@ -148,7 +148,7 @@ export function FigureSection({
                         <span className={classes.removedThumb} />
                       )}
                       <IconRotate size={14} />
-                      <Text size="xs" c="gray.7">
+                      <Text size="xs" c="dimmed">
                         되살리기
                       </Text>
                     </Group>

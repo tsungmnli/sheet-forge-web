@@ -1,9 +1,10 @@
 .title {
   font-size: var(--mantine-font-size-xl);
-  font-weight: 700;
+  font-weight: 600;
   padding-inline: var(--mantine-spacing-xs);
   border: 1px solid transparent;
   border-radius: var(--mantine-radius-sm);
+  transition: border-color 150ms ease;
 }
 
 .title:hover {
@@ -15,7 +16,7 @@
 }
 
 .row {
-  padding: var(--mantine-spacing-sm) 0;
+  padding: var(--mantine-spacing-md) 0;
 }
 
 .row + .row {

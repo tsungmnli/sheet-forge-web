@@ -92,7 +92,7 @@ export function ExamHeader({ exam, onTitleChange }: Props) {
       </Button>
 
       {opened && (
-        <Card mt={8} withBorder padding="sm" bg="gray.0" radius="md">
+        <Card mt={8} withBorder padding="sm" bg="var(--mantine-color-gray-0)" radius="md">
           <Group gap="xl" wrap="wrap">
             <Group gap={6}>
               <Text size="sm" c="dimmed" fw={600}>학생</Text>

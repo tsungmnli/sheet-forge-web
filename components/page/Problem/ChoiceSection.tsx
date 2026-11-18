@@ -58,7 +58,7 @@ export function ChoiceSection({
   return (
     <Stack gap="xs">
       <Group justify="space-between">
-        <Text fw={600} c="gray.7">
+        <Text fw={600} c="dimmed">
           선택지
         </Text>
         <Group gap={4}>
@@ -104,7 +104,7 @@ export function ChoiceSection({
           data-hint={hintPaths.has(`choices.${ci}`)}
         >
           <Group gap="xs" mb="xs">
-            <Text fw={600} c="gray.7" w={24}>
+            <Text fw={600} c="dimmed" w={24}>
               {CHOICE_LABELS[ci]}
             </Text>
             <ActionIcon

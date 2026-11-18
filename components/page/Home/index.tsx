@@ -52,7 +52,7 @@ export function HomeClient() {
         <Button
           className={classes.bigButton}
           classNames={{ inner: classes.bigButtonInner }}
-          color="blue"
+          color="brand"
           radius="lg"
           disabled={h.creating || h.uploading}
           onClick={h.pickPhotos}
@@ -103,7 +103,7 @@ export function HomeClient() {
               </Button>
             )}
             {todo.recognizing > 0 && (
-              <Badge size="xl" variant="light" color="blue" leftSection={<Loader size={14} />}>
+              <Badge size="xl" variant="light" color="brand" leftSection={<Loader size={14} />}>
                 읽는 중 {todo.recognizing}개
               </Badge>
             )}

@@ -1,15 +1,17 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { apiFetch, friendlyError } from "@/lib/api";
-import type {
-  BlockerOut,
-  ContentOut,
-  ContentPutIn,
-  NeighborsOut,
-  ProblemOut,
-} from "@/lib/types";
+import { apiFetch, friendlyError } from '@/lib/api';
+import { notify } from '@/lib/notify';
+import type { BlockerOut, ContentOut, ContentPutIn, NeighborsOut, ProblemOut } from '@/lib/types';
+
+// 이 화면의 동작 실패는 알림으로 띄운다. 값이 아니라 고정된 함수라서 아래 훅들의 deps에 그대로 넣어도 된다.
+const setError = (message: string) => notify.error(message);
+
+// 다른 곳에서 먼저 바뀐 경우(서버 412). 실패가 아니라 안내라서 경고 톤으로 띄운다.
+export const notifyChanged = () =>
+  notify.warn('다른 곳에서 내용이 바뀌었어요. 최신 내용을 다시 불러옵니다.');
 
 // 문제 확인 화면의 데이터 쪽: 불러오기(폴링 포함), 이웃 문제, 내용 수정, 자동 저장.
 // 로직은 Vite 버전 그대로다. 확정·다시 읽기·편집 도우미·그림 동작은 다음 단계 훅에서 이 값들을 받아 쓴다.
@@ -22,8 +24,7 @@ export function useProblemData(examId: string, problemId: string) {
     setEtag(v);
   }, []);
   const [neighbors, setNeighbors] = useState<NeighborsOut | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [blockers, setBlockers] = useState<BlockerOut[]>([]);
   const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -40,46 +41,51 @@ export function useProblemData(examId: string, problemId: string) {
   const seenVersionRef = useRef<number | null>(null);
   const lastContentKeyRef = useRef<string | null>(null);
 
-  const loadProblem = useCallback(async () => {
-    const res = await apiFetch<ProblemOut>(`/problems/${problemId}`);
-    if (res.data) {
-      setProblem(res.data);
-      updateEtag(res.etag || res.data.version.toString());
-      setBlockers(res.data.checks.blockers);
-      if (res.data.poll_after_ms && res.data.status === "recognizing") {
-        if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
-        pollTimerRef.current = setTimeout(
-          () => loadProblem(),
-          res.data.poll_after_ms!,
-        );
+  const loadProblem = useCallback(
+    async function load(): Promise<void> {
+      const res = await apiFetch<ProblemOut>(`/problems/${problemId}`);
+      if (res.data) {
+        setProblem(res.data);
+        updateEtag(res.etag || res.data.version.toString());
+        setBlockers(res.data.checks.blockers);
+        if (res.data.poll_after_ms && res.data.status === 'recognizing') {
+          if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+          pollTimerRef.current = setTimeout(() => load(), res.data.poll_after_ms!);
+        }
+      } else if (res.error) {
+        setError(friendlyError(res.error));
       }
-    } else if (res.error) {
-      setError(friendlyError(res.error));
-    }
-  }, [problemId, updateEtag]);
+    },
+    [problemId, updateEtag],
+  );
 
   const loadNeighbors = useCallback(async () => {
-    const res = await apiFetch<NeighborsOut>(
-      `/problems/${problemId}/neighbors?exam_id=${examId}`,
-    );
+    const res = await apiFetch<NeighborsOut>(`/problems/${problemId}/neighbors?exam_id=${examId}`);
     if (res.data) setNeighbors(res.data);
   }, [problemId, examId]);
 
   // 그림 쪽 되돌리기 토스트 타이머 정리는 그림 훅(step14)에서 따로 한다.
   useEffect(() => {
-    loadProblem();
-    loadNeighbors();
+    void (async () => {
+      await Promise.all([loadProblem(), loadNeighbors()]);
+    })();
     return () => {
       if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      // 타이머 id는 최신 값을 지워야 해서 정리 시점에 읽는다
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       if (mathTimerRef.current) clearTimeout(mathTimerRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [problemId]);
 
   const content = problem?.content;
-  problemRef.current = problem;
   const hints = problem?.hints || [];
+
+  // 자동 저장이 최신 problem을 읽도록 렌더 뒤에 맞춰 둔다
+  useEffect(() => {
+    problemRef.current = problem;
+  }, [problem]);
 
   const pushUndo = useCallback((prev: ContentOut) => {
     undoStackRef.current.push(JSON.parse(JSON.stringify(prev)));
@@ -99,13 +105,15 @@ export function useProblemData(examId: string, problemId: string) {
     [pushUndo],
   );
 
+  // scheduleSave와 doSave가 서로를 부르므로, doSave는 ref로 건너 부른다
+  const doSaveRef = useRef<() => Promise<void>>(async () => {});
+
   const scheduleSave = useCallback(() => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    setSaveState("saving");
+    setSaveState('saving');
     saveTimerRef.current = setTimeout(async () => {
-      await doSave();
+      await doSaveRef.current();
     }, 800);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const doSave = useCallback(async () => {
@@ -117,7 +125,7 @@ export function useProblemData(examId: string, problemId: string) {
     const prev = problemRef.current;
     const curEtag = etagRef.current;
     if (!prev || !curEtag) {
-      setSaveState("idle");
+      setSaveState('idle');
       return;
     }
     // 서버가 관리하는 값(raw_ref, clean_ref, levels, bbox, state 등)은 빼고
@@ -139,15 +147,15 @@ export function useProblemData(examId: string, problemId: string) {
     savePendingRef.current = false;
     try {
       const res = await apiFetch<ProblemOut>(`/problems/${prev.id}/content`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", "If-Match": curEtag },
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'If-Match': curEtag },
         body: JSON.stringify(body),
       });
       if (res.status === 412) {
         savePendingRef.current = false;
-        setError("다른 곳에서 내용이 바뀌었어요. 최신 내용을 다시 불러옵니다.");
+        notifyChanged();
         await loadProblem();
-        setSaveState("idle");
+        setSaveState('idle');
         return;
       }
       if (res.data) {
@@ -157,13 +165,12 @@ export function useProblemData(examId: string, problemId: string) {
         // 이걸 안 하면 '지원 안 함' 수식을 지워도 처음 불러온 안내가 새로고침 전까지 남는다.
         // content·version은 건드리지 않는다(저장 중에 더 고친 내용을 덮어쓰거나, 서버 데이터로 오인해 자동 저장이 멈추는 것을 막기 위해).
         setBlockers(saved.checks.blockers);
-        setProblem((cur) =>
-          cur ? { ...cur, hints: saved.hints, checks: saved.checks } : cur,
-        );
-        setSaveState("saved");
+        setProblem((cur) => (cur ? { ...cur, hints: saved.hints, checks: saved.checks } : cur));
+        setSaveState('saved');
       } else if (res.error) {
-        setError(friendlyError(res.error));
-        setSaveState("idle");
+        // 자동 저장이 실패하면 고친 내용이 서버에 없다. 놓치지 않게 직접 닫을 때까지 둔다.
+        notify.error(friendlyError(res.error), { persist: true });
+        setSaveState('idle');
       }
     } finally {
       savingRef.current = false;
@@ -173,6 +180,10 @@ export function useProblemData(examId: string, problemId: string) {
       scheduleSave();
     }
   }, [loadProblem, updateEtag, scheduleSave]);
+
+  useEffect(() => {
+    doSaveRef.current = doSave;
+  }, [doSave]);
 
   useEffect(() => {
     if (!problem) return;
@@ -186,7 +197,7 @@ export function useProblemData(examId: string, problemId: string) {
     // 내용이 실제로 같으면(같은 version을 다시 읽은 경우 등) 저장하지 않는다
     if (key === lastContentKeyRef.current) return;
     lastContentKeyRef.current = key;
-    if (!skipNextSaveRef.current && problem.status !== "recognizing") {
+    if (!skipNextSaveRef.current && problem.status !== 'recognizing') {
       scheduleSave();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -201,7 +212,6 @@ export function useProblemData(examId: string, problemId: string) {
     etagRef,
     updateEtag,
     neighbors,
-    error,
     setError,
     saveState,
     setSaveState,

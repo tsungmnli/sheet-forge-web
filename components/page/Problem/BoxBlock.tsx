@@ -1,23 +1,16 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import {
-  ActionIcon,
-  Button,
-  Group,
-  Stack,
-  Text,
-  TextInput,
-} from "@mantine/core";
-import { IconArrowDown, IconArrowUp, IconPlus, IconTrash } from "@tabler/icons-react";
+import { useState } from 'react';
+import { ActionIcon, Button, Group, Stack, Text, TextInput } from '@mantine/core';
+import { IconArrowDown, IconArrowUp, IconPlus, IconTrash } from '@tabler/icons-react';
 
-import { InlineView } from "@/components/common/ProblemInline";
-import { stemBoxPath } from "@/lib/stemPath";
-import type { BoxBlockOut, MathResultOut } from "@/lib/types";
+import { InlineView } from '@/components/common/ProblemInline';
+import { stemBoxPath } from '@/lib/stemPath';
+import type { BoxBlockOut, MathResultOut } from '@/lib/types';
 
-import classes from "./Problem.module.css";
-import type { useProblemEditing } from "./hooks/useProblemEditing";
-import type { useProblemView } from "./hooks/useProblemView";
+import classes from './Problem.module.css';
+import type { useProblemEditing } from './hooks/useProblemEditing';
+import type { useProblemView } from './hooks/useProblemView';
 
 type View = ReturnType<typeof useProblemView>;
 type Editing = ReturnType<typeof useProblemEditing>;
@@ -33,19 +26,11 @@ interface Props {
   editing: Editing;
 }
 
-// 상자 블록: 제목(클릭하여 수정)과 여러 줄. 각 줄은 문단과 같은 조각 편집.
-export function BoxBlock({
-  bi,
-  block,
-  hintPaths,
-  mathResults,
-  view,
-  editing,
-}: Props) {
-  const { editingInline, setEditingInline, showMathEditor, setShowMathEditor, focusedPath } =
-    view;
+// 상자 블록: 제목(클릭하여 수정, 비우면 제목 없는 상자)과 여러 줄. 각 줄은 문단과 같은 조각 편집.
+export function BoxBlock({ bi, block, hintPaths, mathResults, view, editing }: Props) {
+  const { editingInline, setEditingInline, showMathEditor, setShowMathEditor, focusedPath } = view;
   const [editingTitle, setEditingTitle] = useState(false);
-  const [titleVal, setTitleVal] = useState(block.title);
+  const [titleVal, setTitleVal] = useState(block.title ?? '');
 
   const {
     editBoxTitle,
@@ -64,16 +49,16 @@ export function BoxBlock({
           size="xs"
           value={titleVal}
           maxLength={20}
-          placeholder="<보기>"
+          placeholder="제목 (비우면 제목 없는 상자)"
           autoFocus
-          styles={{ input: { textAlign: "center" } }}
+          styles={{ input: { textAlign: 'center' } }}
           onChange={(e) => setTitleVal(e.currentTarget.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+            if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
               editBoxTitle(bi, titleVal);
               setEditingTitle(false);
             }
-            if (e.key === "Escape") setEditingTitle(false);
+            if (e.key === 'Escape') setEditingTitle(false);
           }}
           onBlur={() => {
             editBoxTitle(bi, titleVal);
@@ -83,14 +68,16 @@ export function BoxBlock({
       ) : (
         <Text
           ta="center"
-          fw={600}
-          style={{ cursor: "pointer" }}
+          fw={block.title ? 600 : 400}
+          size={block.title ? undefined : 'xs'}
+          c={block.title ? undefined : 'dimmed'}
+          style={{ cursor: 'pointer' }}
           onClick={() => {
-            setTitleVal(block.title);
+            setTitleVal(block.title ?? '');
             setEditingTitle(true);
           }}
         >
-          {block.title || "<보기>"}
+          {block.title || '제목 없음 (클릭하여 제목 추가)'}
         </Text>
       )}
 
@@ -154,11 +141,11 @@ export function BoxBlock({
                       setEditingInline(null);
                     }}
                     onSaveText={(v) => {
-                      editBoxInline(bi, p, ii, { t: "text", v });
+                      editBoxInline(bi, p, ii, { t: 'text', v });
                       setEditingInline(null);
                     }}
                     onSaveMath={(latex) => {
-                      editBoxInline(bi, p, ii, { t: "math", latex });
+                      editBoxInline(bi, p, ii, { t: 'math', latex });
                       setShowMathEditor(null);
                     }}
                     onCancel={() => {
@@ -176,7 +163,7 @@ export function BoxBlock({
                 size="compact-sm"
                 variant="light"
                 color="gray"
-                onClick={() => addBoxInline(bi, p, { t: "text", v: "" })}
+                onClick={() => addBoxInline(bi, p, { t: 'text', v: '' })}
               >
                 글 추가
               </Button>
@@ -184,7 +171,7 @@ export function BoxBlock({
                 size="compact-sm"
                 variant="light"
                 color="gray"
-                onClick={() => addBoxInline(bi, p, { t: "math", latex: "" })}
+                onClick={() => addBoxInline(bi, p, { t: 'math', latex: '' })}
               >
                 수식 추가
               </Button>

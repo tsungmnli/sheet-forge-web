@@ -1,58 +1,46 @@
-"use client";
+'use client';
 
-import { Alert, Paper, SimpleGrid, Stack, Text } from "@mantine/core";
+import { Alert, Paper, SimpleGrid, Stack, Text } from '@mantine/core';
 
-import { BottomBar } from "./BottomBar";
-import { ChoiceSection } from "./ChoiceSection";
-import { CropPane } from "./CropPane";
-import { FigureSection } from "./FigureSection";
-import { ProblemBanners } from "./ProblemBanners";
-import { ProblemHeader } from "./ProblemHeader";
-import { ProblemLoading } from "./ProblemLoading";
-import { ProblemNotices } from "./ProblemNotices";
-import { StemSection } from "./StemSection";
-import { useProblemActions } from "./hooks/useProblemActions";
-import { useProblemData } from "./hooks/useProblemData";
-import { useProblemEditing } from "./hooks/useProblemEditing";
-import { useProblemFigures } from "./hooks/useProblemFigures";
-import { useProblemView } from "./hooks/useProblemView";
+import { BottomBar } from './BottomBar';
+import { ChoiceSection } from './ChoiceSection';
+import { CropPane } from './CropPane';
+import { FigureSection } from './FigureSection';
+import { ProblemBanners } from './ProblemBanners';
+import { ProblemHeader } from './ProblemHeader';
+import { ProblemLoading } from './ProblemLoading';
+import { ProblemNotices } from './ProblemNotices';
+import { StemSection } from './StemSection';
+import { useProblemActions } from './hooks/useProblemActions';
+import { useProblemData } from './hooks/useProblemData';
+import { useProblemEditing } from './hooks/useProblemEditing';
+import { useProblemFigures } from './hooks/useProblemFigures';
+import { useProblemView } from './hooks/useProblemView';
 
 // 문제 확인 화면 조립: 훅 5개를 묶고 각 구역 컴포넌트에 나눠 준다.
-export function ProblemClient({
-  examId,
-  problemId,
-}: {
-  examId: string;
-  problemId: string;
-}) {
+export function ProblemClient({ examId, problemId }: { examId: string; problemId: string }) {
   const data = useProblemData(examId, problemId);
   const actions = useProblemActions(examId, data);
   const view = useProblemView(actions.reread);
   const editing = useProblemEditing(data.updateContent);
   const figs = useProblemFigures(problemId, data);
 
-  const { problem, hints, blockers, neighbors, error, setError, saveState } =
-    data;
+  const { problem, hints, blockers, neighbors, saveState } = data;
 
   if (!problem) return <ProblemLoading />;
 
-  const isRecognizing = problem.status === "recognizing";
-  const isConfirmed = problem.status === "confirmed";
-  const isFailed = problem.status === "failed";
+  const isRecognizing = problem.status === 'recognizing';
+  const isConfirmed = problem.status === 'confirmed';
+  const isFailed = problem.status === 'failed';
   const isEmpty =
-    problem.content.stem.length === 0 &&
-    (problem.content.choices?.items.length ?? 0) === 0;
+    problem.content.stem.length === 0 && (problem.content.choices?.items.length ?? 0) === 0;
   const cropUrl = problem.source.crop_url;
   const hintPaths = new Set(hints.map((h) => h.path));
 
   return (
     // 하단 고정 바에 내용이 가리지 않도록 아래 여백을 준다.
     <Stack gap="md" pb={96}>
-      <ProblemBanners
-        error={error}
-        onCloseError={() => setError(null)}
-        isRecognizing={isRecognizing}
-      />
+      <ProblemBanners isRecognizing={isRecognizing} />
 
       <ProblemHeader examId={examId} neighbors={neighbors} />
 

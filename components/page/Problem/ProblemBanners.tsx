@@ -1,37 +1,18 @@
-"use client";
+'use client';
 
-import { Alert, Loader, Stack } from "@mantine/core";
-import { IconAlertCircle } from "@tabler/icons-react";
+import { Alert, Loader } from '@mantine/core';
 
 interface Props {
-  error: string | null;
-  onCloseError: () => void;
   isRecognizing: boolean;
 }
 
-// 오류 배너(닫을 수 있음)와 '문제를 읽는 중' 안내
-export function ProblemBanners({ error, onCloseError, isRecognizing }: Props) {
-  if (!error && !isRecognizing) return null;
+// '문제를 읽는 중' 안내. 읽는 동안 계속 참인 상태라 알림이 아니라 화면에 둔다.
+export function ProblemBanners({ isRecognizing }: Props) {
+  if (!isRecognizing) return null;
 
   return (
-    <Stack gap="sm">
-      {error && (
-        <Alert
-          color="red"
-          variant="light"
-          icon={<IconAlertCircle size={18} />}
-          withCloseButton
-          closeButtonLabel="닫기"
-          onClose={onCloseError}
-        >
-          {error}
-        </Alert>
-      )}
-      {isRecognizing && (
-        <Alert color="brand" variant="light" icon={<Loader size={18} />}>
-          문제를 읽는 중이에요. 잠시만 기다려 주세요.
-        </Alert>
-      )}
-    </Stack>
+    <Alert color="brand" variant="light" icon={<Loader size={18} />}>
+      문제를 읽는 중이에요. 잠시만 기다려 주세요.
+    </Alert>
   );
 }

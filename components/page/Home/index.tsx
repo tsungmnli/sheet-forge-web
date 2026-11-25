@@ -1,7 +1,8 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import Link from 'next/link';
+import { useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Badge,
   Button,
@@ -15,7 +16,7 @@ import {
   Text,
   TextInput,
   Title,
-} from "@mantine/core";
+} from '@mantine/core';
 import {
   IconAlertCircle,
   IconCamera,
@@ -23,17 +24,18 @@ import {
   IconFilePlus,
   IconSearch,
   IconTrash,
-} from "@tabler/icons-react";
+} from '@tabler/icons-react';
 
-import { PageLoader } from "@/components/common/PageLoader";
-import { ExamList } from "./ExamList";
-import { WorksheetList } from "./WorksheetList";
-import { useHome, type HomeTab } from "./hooks/useHome";
-import classes from "./Home.module.css";
+import { PageLoader } from '@/components/common/PageLoader';
+import { ExamList } from './ExamList';
+import { WorksheetList } from './WorksheetList';
+import { useHome, type HomeTab } from './hooks/useHome';
+import classes from './Home.module.css';
 
 export function HomeClient() {
   const router = useRouter();
   const h = useHome();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { todo } = h;
   const todoCount = (todo?.needs_review ?? 0) + (todo?.recognizing ?? 0) + (todo?.failed ?? 0);
 
@@ -42,7 +44,7 @@ export function HomeClient() {
       {/* 큰 버튼 두 개 */}
       <SimpleGrid cols={{ base: 1, sm: 2 }}>
         <input
-          ref={h.fileInputRef}
+          ref={fileInputRef}
           type="file"
           accept="image/*"
           multiple
@@ -55,11 +57,15 @@ export function HomeClient() {
           color="brand"
           radius="lg"
           disabled={h.creating || h.uploading}
-          onClick={h.pickPhotos}
+          onClick={() => fileInputRef.current?.click()}
         >
           <IconCamera size={32} />
           <Text fw={600} size="lg" c="inherit">
-            {h.uploading ? "사진을 올리는 중이에요…" : "시험지 사진 올리기"}
+            {h.uploading
+              ? h.uploadProgress
+                ? `사진을 올리는 중이에요 (${h.uploadProgress.done}/${h.uploadProgress.total})`
+                : '사진을 올리는 중이에요…'
+              : '시험지 사진 올리기'}
           </Text>
         </Button>
         <Button
@@ -123,7 +129,7 @@ export function HomeClient() {
 
       {/* 탭 + 목록 */}
       <Paper withBorder className={classes.list}>
-        <Tabs value={h.tab} onChange={(v) => h.setTab((v as HomeTab) ?? "exams")}>
+        <Tabs value={h.tab} onChange={(v) => h.setTab((v as HomeTab) ?? 'exams')}>
           <Tabs.List grow>
             <Tabs.Tab value="exams">시험지</Tabs.Tab>
             <Tabs.Tab value="worksheets">문제지</Tabs.Tab>
@@ -152,7 +158,7 @@ export function HomeClient() {
 
         {h.loading ? (
           <PageLoader />
-        ) : h.tab === "exams" ? (
+        ) : h.tab === 'exams' ? (
           <ExamList
             exams={h.filteredExams}
             onDelete={h.deleteExam}

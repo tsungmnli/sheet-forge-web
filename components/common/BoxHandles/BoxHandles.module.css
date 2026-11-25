@@ -5,8 +5,8 @@
 
 .corner {
   position: absolute;
-  width: 24px;
-  height: 24px;
+  width: min(24px, 34%);
+  height: min(24px, 34%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -15,8 +15,8 @@
 
 .dot {
   display: block;
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   background: #fff;
   border: 2px solid var(--mantine-color-green-6);
   border-radius: 2px;

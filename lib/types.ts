@@ -54,7 +54,7 @@ export interface StudentsOut {
 }
 
 export interface TrashItemOut {
-  type: "exam" | "page" | "problem" | "worksheet";
+  type: 'exam' | 'page' | 'problem' | 'worksheet';
   id: string;
   label: string;
   deleted_at: string;
@@ -147,7 +147,7 @@ export interface ProblemListItemOut {
   number?: string | null;
   bbox: number[];
   crop_url?: string | null;
-  state: "not_read" | "recognizing" | "needs_review" | "confirmed" | "failed";
+  state: 'not_read' | 'recognizing' | 'needs_review' | 'confirmed' | 'failed';
   problem_id?: string | null;
   preview: string;
   preview_tex?: string;
@@ -217,7 +217,7 @@ export interface ProblemSourceOut {
 }
 
 export interface TextInlineOut {
-  t: "text";
+  t: 'text';
   v: string;
   bold?: boolean | null;
   underline?: boolean | null;
@@ -225,14 +225,14 @@ export interface TextInlineOut {
 }
 
 export interface MathInlineOut {
-  t: "math";
+  t: 'math';
   latex: string;
   breaks?: number[] | null;
   conf?: number | null;
 }
 
 export interface ImageInlineOut {
-  t: "image";
+  t: 'image';
   ref?: string | null;
   conf?: number | null;
 }
@@ -240,18 +240,19 @@ export interface ImageInlineOut {
 export type InlineOut = TextInlineOut | MathInlineOut | ImageInlineOut;
 
 export interface ParagraphBlockOut {
-  type: "paragraph";
+  type: 'paragraph';
   inlines: InlineOut[];
 }
 
 export interface BoxBlockOut {
-  type: "box";
+  type: 'box';
+  // "<보기>" 같은 제목. 빈 문자열이면 제목 없는 상자(조건 상자)로 내보낸다.
   title: string;
   paragraphs: { inlines: InlineOut[] }[];
 }
 
 export interface TableBlockOut {
-  type: "table";
+  type: 'table';
   rows: InlineOut[][][];
 }
 
@@ -260,22 +261,18 @@ export interface UnknownBlockOut {
   [key: string]: unknown;
 }
 
-export type StemBlockOut =
-  | ParagraphBlockOut
-  | BoxBlockOut
-  | TableBlockOut
-  | UnknownBlockOut;
+export type StemBlockOut = ParagraphBlockOut | BoxBlockOut | TableBlockOut | UnknownBlockOut;
 
 export function isParagraphBlock(b: StemBlockOut): b is ParagraphBlockOut {
-  return b.type === "paragraph";
+  return b.type === 'paragraph';
 }
 
 export function isBoxBlock(b: StemBlockOut): b is BoxBlockOut {
-  return b.type === "box";
+  return b.type === 'box';
 }
 
 export function isTableBlock(b: StemBlockOut): b is TableBlockOut {
-  return b.type === "table";
+  return b.type === 'table';
 }
 
 export interface ChoicesOut {
@@ -288,14 +285,14 @@ export interface FigureOut {
   kind?: string;
   raw_ref?: string | null;
   clean_ref?: string | null;
-  use?: "raw" | "clean";
-  placement?: "after_stem" | "after_choices";
+  use?: 'raw' | 'clean';
+  placement?: 'after_stem' | 'after_choices';
   width_mm?: number | null;
   bbox?: number[] | null;
   levels?: Record<string, string | null> | null;
   clean_level?: number | null;
   erased?: boolean; // 낙서 지우개로 고친 그림이면 true(clean_ref가 지운 결과)
-  state?: "processing" | "ready" | "failed";
+  state?: 'processing' | 'ready' | 'failed';
 }
 
 export interface ContentOut {
@@ -306,7 +303,7 @@ export interface ContentOut {
 
 export interface HintOut {
   path: string;
-  kind: "low_confidence" | "math_warning";
+  kind: 'low_confidence' | 'math_warning';
   message?: string | null;
 }
 
@@ -328,14 +325,14 @@ export interface RemovedFigureOut extends FigureOut {
 export interface ProblemOut {
   id: string;
   exam_id: string;
-  status: "recognizing" | "needs_review" | "confirmed" | "failed";
+  status: 'recognizing' | 'needs_review' | 'confirmed' | 'failed';
   version: number;
   source: ProblemSourceOut;
   content: ContentOut;
   points?: number | null;
   ocr: { has_recognized: boolean };
   hints: HintOut[];
-  removed_figures?: RemovedFigureOut[];   // 지웠지만 되살릴 수 있는 그림
+  removed_figures?: RemovedFigureOut[]; // 지웠지만 되살릴 수 있는 그림
   checks: ChecksOut;
   fail_reason?: string | null; // 읽기에 실패했을 때만: 왜 실패했는지
   poll_after_ms?: number | null;
@@ -364,7 +361,7 @@ export interface MathCheckIn {
 }
 
 export interface MathResultOut {
-  status: "ok" | "warn" | "unsupported";
+  status: 'ok' | 'warn' | 'unsupported';
   message?: string | null;
   est_width?: number | null;
 }
@@ -384,8 +381,8 @@ export interface FigureEditIn {
   id?: string | null;
   raw_ref?: string | null;
   clean_ref?: string | null;
-  use?: "raw" | "clean" | null;
-  placement?: "after_stem" | "after_choices" | null;
+  use?: 'raw' | 'clean' | null;
+  placement?: 'after_stem' | 'after_choices' | null;
   width_mm?: number | null;
 }
 

@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { useRef, type PointerEvent } from "react";
-import { IconCheck } from "@tabler/icons-react";
+import { useRef, type PointerEvent } from 'react';
+import { IconCheck } from '@tabler/icons-react';
 
-import { applyDrag, BoxHandles, type DragMode } from "@/components/common/BoxHandles";
-import type { SegmentOut } from "@/lib/types";
-import type { WorkshopMode } from "./hooks/usePhotoWorkshop";
-import classes from "./PhotoWorkshop.module.css";
+import { applyDrag, BoxHandles, type DragMode } from '@/components/common/BoxHandles';
+import type { SegmentOut } from '@/lib/types';
+import { SEG_MIN, type WorkshopMode } from './hooks/usePhotoWorkshop';
+import classes from './PhotoWorkshop.module.css';
 
 interface Props {
   segments: SegmentOut[];
@@ -38,6 +38,8 @@ export function SegmentOverlay({
 
   const onDown = (seg: SegmentOut, dragMode: DragMode) => (e: PointerEvent) => {
     e.stopPropagation();
+    // 편집 모드에서는 고르지 않은 칸도 바로 끌 수 있다(누르는 순간 그 칸이 선택된다)
+    if (mode === 'edit' && selectedSegId !== seg.id) onSegmentClick(seg.id);
     dragRef.current = {
       id: seg.id,
       px: e.clientX,
@@ -53,7 +55,7 @@ export function SegmentOverlay({
     if (!d || !rect) return;
     const dx = (e.clientX - d.px) / rect.width;
     const dy = (e.clientY - d.py) / rect.height;
-    onBboxChange(d.id, applyDrag(d.start, d.mode, dx, dy));
+    onBboxChange(d.id, applyDrag(d.start, d.mode, dx, dy, SEG_MIN));
   };
   const onUp = (e: PointerEvent) => {
     dragRef.current = null;
@@ -72,8 +74,15 @@ export function SegmentOverlay({
         const isPicked = seg.marked;
         const isRangeStart = rangeStart === seg.id;
         const isSelected = selectedSegId === seg.id;
-        const editable = mode === "edit" && isSelected;
-        const state = isSelected ? "selected" : isRangeStart ? "range" : isPicked ? "picked" : "idle";
+        const editMode = mode === 'edit';
+        const editable = editMode && isSelected;
+        const state = isSelected
+          ? 'selected'
+          : isRangeStart
+            ? 'range'
+            : isPicked
+              ? 'picked'
+              : 'idle';
 
         return (
           <div
@@ -81,16 +90,17 @@ export function SegmentOverlay({
             className={classes.seg}
             data-state={state}
             data-editable={editable || undefined}
+            data-edit-mode={editMode || undefined}
             style={{
               left: `${x0 * 100}%`,
               top: `${y0 * 100}%`,
               width: `${(x1 - x0) * 100}%`,
               height: `${(y1 - y0) * 100}%`,
             }}
-            onPointerDown={editable ? onDown(seg, "move") : undefined}
-            onPointerMove={editable ? onMove : undefined}
-            onPointerUp={editable ? onUp : undefined}
-            onPointerCancel={editable ? onUp : undefined}
+            onPointerDown={editMode ? onDown(seg, 'move') : undefined}
+            onPointerMove={editMode ? onMove : undefined}
+            onPointerUp={editMode ? onUp : undefined}
+            onPointerCancel={editMode ? onUp : undefined}
             onClick={(e) => {
               e.stopPropagation();
               onSegmentClick(seg.id);
@@ -101,7 +111,7 @@ export function SegmentOverlay({
                 {seg.number}
               </span>
             )}
-            {editable && <BoxHandles onDown={(m) => onDown(seg, m)} />}
+            {editable && <BoxHandles anchor="corner" onDown={(m) => onDown(seg, m)} />}
             {isPicked && !isSelected && <IconCheck size={16} className={classes.check} />}
           </div>
         );

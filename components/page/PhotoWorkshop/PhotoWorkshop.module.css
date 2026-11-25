@@ -28,6 +28,24 @@
   object-fit: contain;
 }
 
+/* 확대: 사진 너비를 칸 영역 너비의 --zoom배로 늘리고 영역 안에서 스크롤한다 */
+.stage[data-zoomed] {
+  display: block;
+  overflow: auto;
+  max-height: 75vh;
+}
+
+.imageWrap[data-zoomed] {
+  display: block;
+  width: calc(var(--zoom) * 100%);
+}
+
+.imageWrap[data-zoomed] .image {
+  width: 100%;
+  max-width: none;
+  max-height: none;
+}
+
 .overlay {
   position: absolute;
   inset: 0;
@@ -45,28 +63,36 @@
     border-color 0.15s ease;
 }
 
-.seg[data-state="picked"] {
+.seg[data-state='picked'] {
   border-color: var(--mantine-color-blue-4);
   background: rgba(59, 130, 246, 0.2);
 }
 
-.seg[data-state="range"] {
+.seg[data-state='range'] {
   border-color: var(--mantine-color-yellow-4);
   background: rgba(251, 191, 36, 0.2);
 }
 
 /* 안쪽을 칠하지 않아 그림이 가려지지 않는다 */
-.seg[data-state="selected"] {
+.seg[data-state='selected'] {
   border-color: var(--mantine-color-green-6);
   background: transparent;
 }
 
-/* 어두운 배경에서도 테두리가 보이게 바깥에 흰 선을 한 겹 더한다 */
+/* 편집 모드에서 고르지 않은 칸: 눌러서 고를 수 있다는 표시 */
+.seg[data-edit-mode]:not([data-editable]) {
+  cursor: pointer;
+}
+
+/* 고친 칸의 바깥을 살짝 어둡게 해서(그림 범위 편집기와 같다) 어디까지가 이 칸인지 잘 보이게 한다.
+   테두리가 어두운 사진에서도 보이도록 흰 선을 한 겹 더하되, 칸 바깥으로 번져 나오지 않게 안쪽(inset)에 둔다 */
 .seg[data-editable] {
   z-index: 10;
   cursor: move;
   touch-action: none;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.9),
+    0 0 0 9999px rgb(0 0 0 / 30%);
   transition: none;
 }
 
@@ -80,6 +106,11 @@
   color: var(--mantine-color-white);
   background: light-dark(rgba(41, 37, 36, 0.7), rgba(41, 37, 36, 0.85));
   border-bottom-right-radius: 6px;
+}
+
+/* 고치는 칸: 번호표는 왼쪽 위 모서리 그대로 두고 그 위에 모서리 핸들이 겹친다. 눌림은 가로채지 않는다 */
+.seg[data-editable] .number {
+  pointer-events: none;
 }
 
 .number[data-picked] {

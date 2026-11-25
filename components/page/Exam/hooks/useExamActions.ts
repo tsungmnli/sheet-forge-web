@@ -122,7 +122,9 @@ export function useExamActions(examId: string, title: string, reload: () => void
     });
     setBusy(false);
     if (res.error || !res.data) {
-      notify.error(res.error ? friendlyError(res.error) : '문제지를 만들지 못했어요.');
+      notify.error(res.error ? friendlyError(res.error) : '문제지를 만들지 못했어요.', {
+        persist: true,
+      });
       return;
     }
     router.push(`/worksheets/${res.data.id}`);
@@ -161,7 +163,9 @@ export function useExamActions(examId: string, title: string, reload: () => void
       setUploading({ done: 0, total: files.length });
       const r = await uploadPhotos(examId, files, (done, total) => setUploading({ done, total }));
       setUploading(null);
-      if (r.failed.length > 0) notify.warn(r.failed.join(' '));
+      if (r.failed.length > 0) {
+        notify.list('warn', r.failed, `사진 ${r.failed.length}장은 올리지 못했어요`);
+      }
       if (r.ok > 0) reload();
     },
     [uploading, examId, reload],

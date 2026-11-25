@@ -21,6 +21,19 @@ import type {
 
 export type WorkshopMode = 'pick' | 'edit';
 
+// 칸 한 변의 최소 길이(비율). 끌기·버튼·키보드가 같은 값을 써야 서로 어긋나지 않는다.
+export const SEG_MIN = 0.02;
+// 화살표 한 번에 움직이는 양. Shift를 같이 누르면 크게(그림 범위 편집기와 같은 값).
+const STEP = 0.01;
+const STEP_BIG = 0.03;
+
+function sameSegments(a: SegmentOut[], b: SegmentOut[]): boolean {
+  if (a.length !== b.length) return false;
+  const key = (s: SegmentOut) =>
+    `${s.id}|${s.number ?? ''}|${s.bbox.map((v) => v.toFixed(4)).join(',')}`;
+  return a.every((s, i) => key(s) === key(b[i]));
+}
+
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
 
 // 사진 한 장의 칸 고르기·고치기·읽기 로직. Vite 버전 그대로고, 오류 문구만 알림으로 띄운다.
@@ -71,11 +84,8 @@ export function usePhotoWorkshop(examId: string, pageId: string) {
     };
   }, [loadPage, loadSiblings]);
 
-  useEffect(() => {
-    if (page && mode === 'edit') {
-      setEditSegments(page.segments || []);
-    }
-  }, [page, mode]);
+  // 편집 모드에 들어갈 때(startEdit)만 서버 칸을 편집용으로 복사한다. page가 바뀔 때마다 복사하면
+  // 읽기 진행 확인용 폴링이 편집 중인 칸을 서버 값으로 되돌려 버린다.
 
   const segments = useMemo(() => page?.segments ?? [], [page]);
   const displaySegments = mode === 'edit' ? editSegments : segments;
@@ -211,11 +221,13 @@ export function usePhotoWorkshop(examId: string, pageId: string) {
       body: JSON.stringify(body),
     });
     if (res.status === 409) {
-      notify.error('읽은 문제가 있는 칸은 지울 수 없어요. 해당 칸을 빼고 다시 시도해 주세요.');
+      notify.error('읽은 문제가 있는 칸은 지울 수 없어요. 해당 칸을 빼고 다시 시도해 주세요.', {
+        persist: true,
+      });
       return;
     }
     if (res.error) {
-      notify.error(friendlyError(res.error));
+      notify.error(friendlyError(res.error), { persist: true });
       return;
     }
     setMode('pick');
@@ -264,8 +276,8 @@ export function usePhotoWorkshop(examId: string, pageId: string) {
           if (s.id !== segId) return s;
           // bbox는 [x0, y0, x1, y1]. dx·dy는 통째로 옮기고, dw·dh는 크기를 바꾼다
           const [bx0, by0, bx1, by1] = s.bbox;
-          const w = Math.max(0.02, Math.min(1, bx1 - bx0 + dw));
-          const h = Math.max(0.02, Math.min(1, by1 - by0 + dh));
+          const w = Math.max(SEG_MIN, Math.min(1, bx1 - bx0 + dw));
+          const h = Math.max(SEG_MIN, Math.min(1, by1 - by0 + dh));
           const x0 = Math.max(0, Math.min(1 - w, bx0 + dx));
           const y0 = Math.max(0, Math.min(1 - h, by0 + dy));
           return { ...s, bbox: [x0, y0, x0 + w, y0 + h] };
@@ -279,6 +291,69 @@ export function usePhotoWorkshop(examId: string, pageId: string) {
   const setSegmentBbox = useCallback((segId: string, bbox: number[]) => {
     setEditSegments((prev) => prev.map((s) => (s.id === segId ? { ...s, bbox } : s)));
   }, []);
+
+  // 고른 칸을 서버에 저장된 모양으로 되돌린다(새로 만든 칸은 되돌릴 원본이 없다)
+  const resetSegment = useCallback(
+    (segId: string) => {
+      const orig = page?.segments?.find((s) => s.id === segId);
+      if (!orig) return;
+      setEditSegments((prev) =>
+        prev.map((s) => (s.id === segId ? { ...s, bbox: [...orig.bbox] } : s)),
+      );
+    },
+    [page],
+  );
+
+  const canResetSegment = useCallback(
+    (segId: string | null) => {
+      const orig = page?.segments?.find((s) => s.id === segId);
+      const cur = editSegments.find((s) => s.id === segId);
+      return Boolean(orig && cur && !sameSegments([orig], [cur]));
+    },
+    [page, editSegments],
+  );
+
+  // 저장하지 않은 변경이 있는가(칸 추가·삭제·이동·크기)
+  const dirty = mode === 'edit' && !sameSegments(editSegments, page?.segments ?? []);
+
+  // 편집 중 창을 닫거나 새로고침하면 브라우저가 한 번 물어본다
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [dirty]);
+
+  // 키보드: 화살표로 옮기고, Alt+화살표로 크기를 바꾼다. Shift는 크게. Esc는 선택 해제.
+  useEffect(() => {
+    if (mode !== 'edit' || !selectedSegId) return;
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      if (e.ctrlKey || e.metaKey) return;
+      if (e.key === 'Escape') {
+        setSelectedSegId(null);
+        return;
+      }
+      const step = e.shiftKey ? STEP_BIG : STEP;
+      const dir: Record<string, [number, number]> = {
+        ArrowLeft: [-step, 0],
+        ArrowRight: [step, 0],
+        ArrowUp: [0, -step],
+        ArrowDown: [0, step],
+      };
+      const d = dir[e.key];
+      if (!d) return;
+      if (e.altKey) nudgeSegment(selectedSegId, 0, 0, d[0], d[1]);
+      else nudgeSegment(selectedSegId, d[0], d[1], 0, 0);
+      e.preventDefault();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [mode, selectedSegId, nudgeSegment]);
 
   const handleSegmentClick = useCallback(
     (segId: string) => {
@@ -332,6 +407,9 @@ export function usePhotoWorkshop(examId: string, pageId: string) {
     deleteSegment,
     nudgeSegment,
     setSegmentBbox,
+    resetSegment,
+    canResetSegment,
+    dirty,
     handleSegmentClick,
   };
 }

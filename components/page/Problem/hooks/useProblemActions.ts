@@ -1,15 +1,10 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
-import { apiFetch, friendlyError } from "@/lib/api";
-import {
-  choiceInlinePath,
-  stemBoxPath,
-  stemInlinePath,
-  stemTableCellPath,
-} from "@/lib/stemPath";
+import { apiFetch, friendlyError } from '@/lib/api';
+import { choiceInlinePath, stemBoxPath, stemInlinePath, stemTableCellPath } from '@/lib/stemPath';
 import {
   isBoxBlock,
   isParagraphBlock,
@@ -18,8 +13,8 @@ import {
   type MathCheckOut,
   type MathResultOut,
   type ProblemOut,
-} from "@/lib/types";
-import type { useProblemData } from "./useProblemData";
+} from '@/lib/types';
+import { notifyChanged, type useProblemData } from './useProblemData';
 
 type ProblemData = ReturnType<typeof useProblemData>;
 
@@ -52,14 +47,14 @@ export function useProblemActions(examId: string, data: ProblemData) {
     problem.content.stem.forEach((blk, bi) => {
       if (isParagraphBlock(blk)) {
         blk.inlines.forEach((il, ii) => {
-          if (il.t === "math" && il.latex) {
+          if (il.t === 'math' && il.latex) {
             items.push({ latex: il.latex, path: stemInlinePath(bi, ii) });
           }
         });
       } else if (isBoxBlock(blk)) {
         blk.paragraphs.forEach((para, p) => {
           para.inlines.forEach((il, ii) => {
-            if (il.t === "math" && il.latex) {
+            if (il.t === 'math' && il.latex) {
               items.push({ latex: il.latex, path: stemBoxPath(bi, p, ii) });
             }
           });
@@ -68,7 +63,7 @@ export function useProblemActions(examId: string, data: ProblemData) {
         blk.rows.forEach((row, r) => {
           row.forEach((cell, c) => {
             cell.forEach((il, ii) => {
-              if (il.t === "math" && il.latex) {
+              if (il.t === 'math' && il.latex) {
                 items.push({
                   latex: il.latex,
                   path: stemTableCellPath(bi, r, c, ii),
@@ -82,7 +77,7 @@ export function useProblemActions(examId: string, data: ProblemData) {
     if (problem.content.choices) {
       problem.content.choices.items.forEach((choice, ci) => {
         choice.forEach((il, ii) => {
-          if (il.t === "math" && il.latex) {
+          if (il.t === 'math' && il.latex) {
             items.push({ latex: il.latex, path: choiceInlinePath(ci, ii) });
           }
         });
@@ -93,9 +88,9 @@ export function useProblemActions(examId: string, data: ProblemData) {
       return;
     }
     const req: MathCheckIn = { items: items.map((i) => ({ latex: i.latex })) };
-    apiFetch<MathCheckOut>("/math/check", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    apiFetch<MathCheckOut>('/math/check', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(req),
     }).then((res) => {
       if (res.data) {
@@ -120,11 +115,11 @@ export function useProblemActions(examId: string, data: ProblemData) {
   const confirm = useCallback(async () => {
     if (!problem || !etag) return;
     const res = await apiFetch<ProblemOut>(`/problems/${problem.id}/confirm`, {
-      method: "POST",
-      headers: { "If-Match": etag },
+      method: 'POST',
+      headers: { 'If-Match': etag },
     });
     if (res.status === 412) {
-      setError("다른 곳에서 내용이 바뀌었어요. 최신 내용을 다시 불러옵니다.");
+      notifyChanged();
       await loadProblem();
       return;
     }
@@ -138,9 +133,9 @@ export function useProblemActions(examId: string, data: ProblemData) {
           }>;
           setBlockers(
             detailArr.map((d) => ({
-              path: d.path || "",
-              code: "",
-              message: d.message || "확인할 수 없는 문제가 있어요.",
+              path: d.path || '',
+              code: '',
+              message: d.message || '확인할 수 없는 문제가 있어요.',
             })),
           );
         }
@@ -157,12 +152,24 @@ export function useProblemActions(examId: string, data: ProblemData) {
     } else if (res.error) {
       setError(friendlyError(res.error));
     }
-  }, [problem, etag, autoNext, neighbors, examId, router, loadProblem, updateEtag, setError, setBlockers, setProblem]);
+  }, [
+    problem,
+    etag,
+    autoNext,
+    neighbors,
+    examId,
+    router,
+    loadProblem,
+    updateEtag,
+    setError,
+    setBlockers,
+    setProblem,
+  ]);
 
   const reopen = useCallback(async () => {
     if (!problem) return;
     const res = await apiFetch<ProblemOut>(`/problems/${problem.id}/reopen`, {
-      method: "POST",
+      method: 'POST',
     });
     if (res.data) {
       updateEtag(res.etag || res.data.version.toString());
@@ -176,7 +183,7 @@ export function useProblemActions(examId: string, data: ProblemData) {
   const revert = useCallback(async () => {
     if (!problem) return;
     const res = await apiFetch<ProblemOut>(`/problems/${problem.id}/revert`, {
-      method: "POST",
+      method: 'POST',
     });
     if (res.data) {
       updateEtag(res.etag || res.data.version.toString());
@@ -193,10 +200,10 @@ export function useProblemActions(examId: string, data: ProblemData) {
     if (!problem) return;
     if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
     const res = await apiFetch<ProblemOut>(`/problems/${problem.id}/reread`, {
-      method: "POST",
+      method: 'POST',
     });
     if (res.status === 429) {
-      setError("오늘 읽기 한도를 다 썼어요. 내일 다시 시도해 주세요.");
+      setError('오늘 읽기 한도를 다 썼어요. 내일 다시 시도해 주세요.');
       return;
     }
     if (res.data) {
@@ -204,21 +211,27 @@ export function useProblemActions(examId: string, data: ProblemData) {
       redoStackRef.current = [];
       updateEtag(res.etag || res.data.version.toString());
       setProblem(res.data);
-      if (res.data.status === "recognizing") {
+      if (res.data.status === 'recognizing') {
         // 읽기가 끝날 때까지 주기적으로 다시 불러와 새로고침 없이 결과를 보여 준다
-        pollTimerRef.current = setTimeout(
-          () => loadProblem(),
-          res.data.poll_after_ms ?? 1500,
-        );
+        pollTimerRef.current = setTimeout(() => loadProblem(), res.data.poll_after_ms ?? 1500);
       }
     } else if (res.error) {
       setError(friendlyError(res.error));
     }
-  }, [problem, loadProblem, updateEtag, setError, setProblem, undoStackRef, redoStackRef, pollTimerRef]);
+  }, [
+    problem,
+    loadProblem,
+    updateEtag,
+    setError,
+    setProblem,
+    undoStackRef,
+    redoStackRef,
+    pollTimerRef,
+  ]);
 
   const deleteProblem = useCallback(async () => {
     if (!problem) return;
-    const res = await apiFetch(`/problems/${problem.id}`, { method: "DELETE" });
+    const res = await apiFetch(`/problems/${problem.id}`, { method: 'DELETE' });
     if (res.error) {
       setError(friendlyError(res.error));
       return;
@@ -230,8 +243,7 @@ export function useProblemActions(examId: string, data: ProblemData) {
     if (undoStackRef.current.length === 0) return;
     const prev = undoStackRef.current.pop()!;
     setProblem((cur) => {
-      if (cur)
-        redoStackRef.current.push(JSON.parse(JSON.stringify(cur.content)));
+      if (cur) redoStackRef.current.push(JSON.parse(JSON.stringify(cur.content)));
       return cur ? { ...cur, content: prev } : cur;
     });
     skipNextSaveRef.current = true;
@@ -241,8 +253,7 @@ export function useProblemActions(examId: string, data: ProblemData) {
     if (redoStackRef.current.length === 0) return;
     const next = redoStackRef.current.pop()!;
     setProblem((cur) => {
-      if (cur)
-        undoStackRef.current.push(JSON.parse(JSON.stringify(cur.content)));
+      if (cur) undoStackRef.current.push(JSON.parse(JSON.stringify(cur.content)));
       return cur ? { ...cur, content: next } : cur;
     });
     skipNextSaveRef.current = true;

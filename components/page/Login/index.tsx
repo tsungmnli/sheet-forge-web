@@ -1,30 +1,22 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import {
-  Anchor,
-  Button,
-  PasswordInput,
-  Stack,
-  Text,
-  TextInput,
-  Title,
-} from "@mantine/core";
+import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Anchor, Button, PasswordInput, Stack, Text, TextInput, Title } from '@mantine/core';
 
-import { PageLoader } from "@/components/common/PageLoader";
-import { friendlyError } from "@/lib/api";
-import { getMe, login, safeNext } from "@/lib/auth";
-import { notify } from "@/lib/notify";
-import { useLogin } from "./hooks/useLogin";
-import classes from "./Login.module.css";
+import { PageLoader } from '@/components/common/PageLoader';
+import { friendlyError } from '@/lib/api';
+import { getMe, login, safeNext } from '@/lib/auth';
+import { useLogin } from './hooks/useLogin';
+import classes from './Login.module.css';
 
 export function LoginClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [checking, setChecking] = useState(true);
   const form = useLogin();
+  const emailRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -32,13 +24,15 @@ export function LoginClient() {
       const res = await getMe();
       if (cancelled) return;
       if (res.data) {
-        const next = safeNext(searchParams.get("next"));
+        const next = safeNext(searchParams.get('next'));
         router.replace(next);
         return;
       }
       setChecking(false);
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [router, searchParams]);
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -56,8 +50,7 @@ export function LoginClient() {
       form.setError(friendlyError(res.error));
       return;
     }
-    notify.success(`안녕하세요, ${res.data?.display_name ?? ""}님.`);
-    const next = safeNext(searchParams.get("next"));
+    const next = safeNext(searchParams.get('next'));
     router.replace(next);
   };
 
@@ -66,10 +59,12 @@ export function LoginClient() {
   return (
     <form onSubmit={onSubmit} noValidate>
       <Stack gap="md">
-        <Title order={3} className={classes.title}>로그인</Title>
+        <Title order={3} className={classes.title}>
+          로그인
+        </Title>
 
         <TextInput
-          ref={form.emailRef}
+          ref={emailRef}
           label="이메일"
           type="email"
           size="md"
@@ -93,11 +88,13 @@ export function LoginClient() {
         />
 
         {form.error && (
-          <Text c="red" size="sm" className={classes.error}>{form.error}</Text>
+          <Text c="red" size="sm" className={classes.error}>
+            {form.error}
+          </Text>
         )}
 
         <Button type="submit" size="md" fullWidth loading={form.submitting}>
-          {form.submitting ? "로그인 중…" : "로그인"}
+          {form.submitting ? '로그인 중…' : '로그인'}
         </Button>
 
         <Anchor

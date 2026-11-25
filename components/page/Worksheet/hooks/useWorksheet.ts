@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from 'react';
 
-import { apiFetch, friendlyError } from "@/lib/api";
-import { notify } from "@/lib/notify";
-import { saveBase64 } from "../saveBase64";
-import type { CheckOut, ExportOut, PresetShape, Worksheet } from "../types";
+import { apiFetch, friendlyError } from '@/lib/api';
+import { notify } from '@/lib/notify';
+import { saveBase64 } from '../saveBase64';
+import type { CheckOut, ExportOut, PresetShape, Worksheet } from '../types';
 
 export function useWorksheet(worksheetId: string) {
   const [ws, setWs] = useState<Worksheet | null>(null);
@@ -15,7 +15,7 @@ export function useWorksheet(worksheetId: string) {
   const [result, setResult] = useState<ExportOut | null>(null);
   const [etag, setEtag] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [titleDraft, setTitleDraft] = useState("");
+  const [titleDraft, setTitleDraft] = useState('');
   const [undoIds, setUndoIds] = useState<string[] | null>(null);
 
   const loadCheck = useCallback(async () => {
@@ -26,7 +26,7 @@ export function useWorksheet(worksheetId: string) {
   const load = useCallback(async () => {
     const w = await apiFetch<Worksheet>(`/worksheets/${worksheetId}`);
     if (w.error || !w.data) {
-      const msg = w.error ? friendlyError(w.error) : "문제지를 불러오지 못했어요.";
+      const msg = w.error ? friendlyError(w.error) : '문제지를 불러오지 못했어요.';
       setLoadError(msg);
       notify.error(msg);
       return;
@@ -38,22 +38,27 @@ export function useWorksheet(worksheetId: string) {
   }, [worksheetId, loadCheck]);
 
   useEffect(() => {
-    load();
+    void (async () => {
+      await load();
+    })();
   }, [load]);
 
+  // 서버 제목이 바뀌면 입력 중인 제목도 맞춘다(렌더 중에 맞추는 방식이라 effect가 필요 없다)
   const savedTitle = ws?.title;
-  useEffect(() => {
+  const [prevSavedTitle, setPrevSavedTitle] = useState(savedTitle);
+  if (savedTitle !== prevSavedTitle) {
+    setPrevSavedTitle(savedTitle);
     if (savedTitle !== undefined) setTitleDraft(savedTitle);
-  }, [savedTitle]);
+  }
 
   // 고치기(제목·순서·빼기)는 모두 If-Match와 함께 보내고, 응답으로 화면을 갱신한다
   const send = useCallback(
-    async (path: string, method: "PATCH" | "PUT", body: unknown) => {
+    async (path: string, method: 'PATCH' | 'PUT', body: unknown) => {
       if (!etag) return false;
       setSaving(true);
       const res = await apiFetch<Worksheet>(path, {
         method,
-        headers: { "Content-Type": "application/json", "If-Match": etag },
+        headers: { 'Content-Type': 'application/json', 'If-Match': etag },
         body: JSON.stringify(body),
       });
       setSaving(false);
@@ -78,7 +83,7 @@ export function useWorksheet(worksheetId: string) {
       setTitleDraft(ws.title);
       return;
     }
-    await send(`/worksheets/${worksheetId}`, "PATCH", { title: next });
+    await send(`/worksheets/${worksheetId}`, 'PATCH', { title: next });
   }, [ws, titleDraft, send, worksheetId]);
 
   const resetTitle = useCallback(() => {
@@ -86,7 +91,7 @@ export function useWorksheet(worksheetId: string) {
   }, [ws]);
 
   const putIds = useCallback(
-    (ids: string[]) => send(`/worksheets/${worksheetId}/problems`, "PUT", { problem_ids: ids }),
+    (ids: string[]) => send(`/worksheets/${worksheetId}/problems`, 'PUT', { problem_ids: ids }),
     [send, worksheetId],
   );
 
@@ -123,13 +128,14 @@ export function useWorksheet(worksheetId: string) {
   const makeFile = useCallback(async () => {
     if (busy) return;
     setBusy(true);
-    const res = await apiFetch<ExportOut>(
-      `/worksheets/${worksheetId}/export?format=json`,
-      { method: "POST" },
-    );
+    const res = await apiFetch<ExportOut>(`/worksheets/${worksheetId}/export?format=json`, {
+      method: 'POST',
+    });
     setBusy(false);
     if (res.error || !res.data) {
-      notify.error(res.error ? friendlyError(res.error) : "한글 파일을 만들지 못했어요.");
+      notify.error(res.error ? friendlyError(res.error) : '한글 파일을 만들지 못했어요.', {
+        persist: true,
+      });
       return;
     }
     setResult(res.data);
@@ -140,7 +146,7 @@ export function useWorksheet(worksheetId: string) {
   const changePreset = useCallback(
     async (change: (p: PresetShape) => PresetShape) => {
       if (!ws?.preset || saving) return;
-      await send(`/worksheets/${worksheetId}`, "PATCH", { preset: change(ws.preset) });
+      await send(`/worksheets/${worksheetId}`, 'PATCH', { preset: change(ws.preset) });
     },
     [ws, saving, send, worksheetId],
   );

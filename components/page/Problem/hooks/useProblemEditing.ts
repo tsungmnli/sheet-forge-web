@@ -1,14 +1,9 @@
-"use client";
+'use client';
 
-import { useCallback } from "react";
+import { useCallback } from 'react';
 
-import {
-  isBoxBlock,
-  isParagraphBlock,
-  isTableBlock,
-  type InlineOut,
-} from "@/lib/types";
-import type { useProblemData } from "./useProblemData";
+import { isBoxBlock, isParagraphBlock, isTableBlock, type InlineOut } from '@/lib/types';
+import type { useProblemData } from './useProblemData';
 
 type ProblemData = ReturnType<typeof useProblemData>;
 
@@ -17,29 +12,44 @@ const MAX_TABLE_ROWS = 40;
 const MAX_TABLE_COLS = 8;
 
 // 지문·보기 편집 도우미. 전부 updateContent로 내용만 바꾸고, 저장은 useProblemData의 자동 저장이 맡는다.
-export function useProblemEditing(updateContent: ProblemData["updateContent"]) {
+export function useProblemEditing(updateContent: ProblemData['updateContent']) {
   // --- 본문 블록 공통 ---
   const addStemParagraph = useCallback(() => {
     updateContent((prev) => ({
       ...prev,
-      stem: [...prev.stem, { type: "paragraph", inlines: [] }],
+      stem: [...prev.stem, { type: 'paragraph', inlines: [] }],
     }));
   }, [updateContent]);
 
+  // 제목 없는 상자(조건 상자). 제목은 상자에서 클릭해 넣는다.
   const addStemBox = useCallback(() => {
     updateContent((prev) => ({
       ...prev,
-      stem: [
-        ...prev.stem,
-        { type: "box", title: "<보기>", paragraphs: [{ inlines: [] }] },
-      ],
+      stem: [...prev.stem, { type: 'box', title: '', paragraphs: [{ inlines: [] }] }],
+    }));
+  }, [updateContent]);
+
+  // <보기> 상자(제목 있음)
+  const addStemViewBox = useCallback(() => {
+    updateContent((prev) => ({
+      ...prev,
+      stem: [...prev.stem, { type: 'box', title: '<보기>', paragraphs: [{ inlines: [] }] }],
     }));
   }, [updateContent]);
 
   const addStemTable = useCallback(() => {
     updateContent((prev) => ({
       ...prev,
-      stem: [...prev.stem, { type: "table", rows: [[[], []], [[], []]] }],
+      stem: [
+        ...prev.stem,
+        {
+          type: 'table',
+          rows: [
+            [[], []],
+            [[], []],
+          ],
+        },
+      ],
     }));
   }, [updateContent]);
 
@@ -75,9 +85,7 @@ export function useProblemEditing(updateContent: ProblemData["updateContent"]) {
           b === bi && isParagraphBlock(blk)
             ? {
                 ...blk,
-                inlines: blk.inlines.map((il, i) =>
-                  i === ii ? newInline : il,
-                ),
+                inlines: blk.inlines.map((il, i) => (i === ii ? newInline : il)),
               }
             : blk,
         ),
@@ -91,9 +99,7 @@ export function useProblemEditing(updateContent: ProblemData["updateContent"]) {
       updateContent((prev) => ({
         ...prev,
         stem: prev.stem.map((blk, b) =>
-          b === bi && isParagraphBlock(blk)
-            ? { ...blk, inlines: [...blk.inlines, inline] }
-            : blk,
+          b === bi && isParagraphBlock(blk) ? { ...blk, inlines: [...blk.inlines, inline] } : blk,
         ),
       }));
     },
@@ -119,9 +125,7 @@ export function useProblemEditing(updateContent: ProblemData["updateContent"]) {
     (bi: number, title: string) => {
       updateContent((prev) => ({
         ...prev,
-        stem: prev.stem.map((blk, b) =>
-          b === bi && isBoxBlock(blk) ? { ...blk, title } : blk,
-        ),
+        stem: prev.stem.map((blk, b) => (b === bi && isBoxBlock(blk) ? { ...blk, title } : blk)),
       }));
     },
     [updateContent],
@@ -132,9 +136,7 @@ export function useProblemEditing(updateContent: ProblemData["updateContent"]) {
       updateContent((prev) => ({
         ...prev,
         stem: prev.stem.map((blk, b) =>
-          b === bi &&
-          isBoxBlock(blk) &&
-          blk.paragraphs.length < MAX_BOX_PARAGRAPHS
+          b === bi && isBoxBlock(blk) && blk.paragraphs.length < MAX_BOX_PARAGRAPHS
             ? { ...blk, paragraphs: [...blk.paragraphs, { inlines: [] }] }
             : blk,
         ),
@@ -188,9 +190,7 @@ export function useProblemEditing(updateContent: ProblemData["updateContent"]) {
                 paragraphs: blk.paragraphs.map((para, pi) =>
                   pi === p
                     ? {
-                        inlines: para.inlines.map((il, i) =>
-                          i === ii ? newInline : il,
-                        ),
+                        inlines: para.inlines.map((il, i) => (i === ii ? newInline : il)),
                       }
                     : para,
                 ),
@@ -230,9 +230,7 @@ export function useProblemEditing(updateContent: ProblemData["updateContent"]) {
             ? {
                 ...blk,
                 paragraphs: blk.paragraphs.map((para, pi) =>
-                  pi === p
-                    ? { inlines: para.inlines.filter((_, i) => i !== ii) }
-                    : para,
+                  pi === p ? { inlines: para.inlines.filter((_, i) => i !== ii) } : para,
                 ),
               }
             : blk,
@@ -251,10 +249,7 @@ export function useProblemEditing(updateContent: ProblemData["updateContent"]) {
           if (b !== bi || !isTableBlock(blk)) return blk;
           if (blk.rows.length >= MAX_TABLE_ROWS) return blk;
           const colCount = blk.rows[0]?.length ?? 0;
-          const newRow = Array.from(
-            { length: colCount },
-            () => [] as InlineOut[],
-          );
+          const newRow = Array.from({ length: colCount }, () => [] as InlineOut[]);
           return { ...blk, rows: [...blk.rows, newRow] };
         }),
       }));
@@ -323,9 +318,7 @@ export function useProblemEditing(updateContent: ProblemData["updateContent"]) {
                 rows: blk.rows.map((row, ri) =>
                   ri === r
                     ? row.map((cell, ci) =>
-                        ci === c
-                          ? cell.map((il, i) => (i === ii ? newInline : il))
-                          : cell,
+                        ci === c ? cell.map((il, i) => (i === ii ? newInline : il)) : cell,
                       )
                     : row,
                 ),
@@ -346,11 +339,7 @@ export function useProblemEditing(updateContent: ProblemData["updateContent"]) {
             ? {
                 ...blk,
                 rows: blk.rows.map((row, ri) =>
-                  ri === r
-                    ? row.map((cell, ci) =>
-                        ci === c ? [...cell, inline] : cell,
-                      )
-                    : row,
+                  ri === r ? row.map((cell, ci) => (ci === c ? [...cell, inline] : cell)) : row,
                 ),
               }
             : blk,
@@ -370,11 +359,7 @@ export function useProblemEditing(updateContent: ProblemData["updateContent"]) {
                 ...blk,
                 rows: blk.rows.map((row, ri) =>
                   ri === r
-                    ? row.map((cell, ci) =>
-                        ci === c
-                          ? cell.filter((_, i) => i !== ii)
-                          : cell,
-                      )
+                    ? row.map((cell, ci) => (ci === c ? cell.filter((_, i) => i !== ii) : cell))
                     : row,
                 ),
               }
@@ -389,15 +374,13 @@ export function useProblemEditing(updateContent: ProblemData["updateContent"]) {
   const editChoiceInline = useCallback(
     (ci: number, ii: number, newInline: InlineOut) => {
       updateContent((prev) => {
-        const choices = prev.choices || { items: [], layout: "auto" };
+        const choices = prev.choices || { items: [], layout: 'auto' };
         return {
           ...prev,
           choices: {
             ...choices,
             items: choices.items.map((choice, c) =>
-              c === ci
-                ? choice.map((il, i) => (i === ii ? newInline : il))
-                : choice,
+              c === ci ? choice.map((il, i) => (i === ii ? newInline : il)) : choice,
             ),
           },
         };
@@ -408,7 +391,7 @@ export function useProblemEditing(updateContent: ProblemData["updateContent"]) {
 
   const addChoice = useCallback(() => {
     updateContent((prev) => {
-      const choices = prev.choices || { items: [], layout: "auto" };
+      const choices = prev.choices || { items: [], layout: 'auto' };
       if (choices.items.length >= 5) return prev;
       return {
         ...prev,
@@ -420,7 +403,7 @@ export function useProblemEditing(updateContent: ProblemData["updateContent"]) {
   const deleteChoice = useCallback(
     (ci: number) => {
       updateContent((prev) => {
-        const choices = prev.choices || { items: [], layout: "auto" };
+        const choices = prev.choices || { items: [], layout: 'auto' };
         return {
           ...prev,
           choices: {
@@ -436,7 +419,7 @@ export function useProblemEditing(updateContent: ProblemData["updateContent"]) {
   const moveChoice = useCallback(
     (ci: number, dir: -1 | 1) => {
       updateContent((prev) => {
-        const choices = prev.choices || { items: [], layout: "auto" };
+        const choices = prev.choices || { items: [], layout: 'auto' };
         const arr = [...choices.items];
         const ni = ci + dir;
         if (ni < 0 || ni >= arr.length) return prev;
@@ -450,14 +433,12 @@ export function useProblemEditing(updateContent: ProblemData["updateContent"]) {
   const addInlineToChoice = useCallback(
     (ci: number, inline: InlineOut) => {
       updateContent((prev) => {
-        const choices = prev.choices || { items: [], layout: "auto" };
+        const choices = prev.choices || { items: [], layout: 'auto' };
         return {
           ...prev,
           choices: {
             ...choices,
-            items: choices.items.map((choice, c) =>
-              c === ci ? [...choice, inline] : choice,
-            ),
+            items: choices.items.map((choice, c) => (c === ci ? [...choice, inline] : choice)),
           },
         };
       });
@@ -468,7 +449,7 @@ export function useProblemEditing(updateContent: ProblemData["updateContent"]) {
   const deleteChoiceInline = useCallback(
     (ci: number, ii: number) => {
       updateContent((prev) => {
-        const choices = prev.choices || { items: [], layout: "auto" };
+        const choices = prev.choices || { items: [], layout: 'auto' };
         return {
           ...prev,
           choices: {
@@ -486,7 +467,7 @@ export function useProblemEditing(updateContent: ProblemData["updateContent"]) {
   const setChoicesNone = useCallback(() => {
     updateContent((prev) => ({
       ...prev,
-      choices: { items: [], layout: "auto" },
+      choices: { items: [], layout: 'auto' },
     }));
   }, [updateContent]);
 
@@ -494,6 +475,7 @@ export function useProblemEditing(updateContent: ProblemData["updateContent"]) {
     editStemInline,
     addStemParagraph,
     addStemBox,
+    addStemViewBox,
     addStemTable,
     deleteStemParagraph,
     moveStemParagraph,

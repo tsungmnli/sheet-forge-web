@@ -126,7 +126,20 @@ export function InlineView({
   if (isMathEditing && inline.t === 'math') {
     return (
       <span ref={ref} className={classes.inline} data-path={path} data-focused={isFocused}>
-        <MathEditor initialLatex={inline.latex} onSave={onSaveMath} onCancel={onCancel} />
+        <MathEditor
+          initialLatex={inline.latex}
+          anchor={
+            inline.latex ? (
+              <span dangerouslySetInnerHTML={{ __html: renderLatex(inline.latex) }} />
+            ) : (
+              <Text span c="dimmed">
+                (빈 수식)
+              </Text>
+            )
+          }
+          onSave={onSaveMath}
+          onCancel={onCancel}
+        />
       </span>
     );
   }

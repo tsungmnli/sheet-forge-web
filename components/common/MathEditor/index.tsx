@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { Button, Group, Paper, Text } from '@mantine/core';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Button, Group, Popover, Text } from '@mantine/core';
 import type { MathfieldElement } from 'mathlive';
 
 import classes from './MathEditor.module.css';
@@ -54,6 +54,27 @@ const GEOMETRY_BUTTONS: { label: string; snippet: string; hint: string }[] = [
 
 // 하단 고정 바(BottomBar)가 차지하는 높이. 편집기가 이 아래로 내려가 가려지지 않게 한다.
 const BOTTOM_BAR_PX = 80;
+// 화면 가장자리 여백, 수식과 편집기 사이 간격.
+const EDGE_PX = 8;
+const OFFSET_PX = 4;
+// 편집기의 대략적인 높이(방향을 정할 때만 쓴다)와, 이보다는 줄이지 않을 최소 높이.
+const EDITOR_EST_PX = 390;
+const EDITOR_MIN_PX = 160;
+// 한쪽 자리가 이보다 좁고 반대쪽이 이만큼 더 넓을 때만 위/아래를 바꾼다(스크롤·키보드로 수식이 움직인 경우).
+const EDITOR_COMFORT_PX = 260;
+const SWITCH_MARGIN_PX = 80;
+
+type Side = 'bottom-start' | 'top-start';
+
+// 수식 아래·위에 남은 높이. 아래쪽은 하단 바와 가상 키보드가 차지하는 만큼을 뺀다.
+function measureRoom(anchor: HTMLElement | null): { below: number; above: number } {
+  const r = anchor?.getBoundingClientRect();
+  if (!r) return { below: EDITOR_EST_PX, above: 0 };
+  const kb = window.mathVirtualKeyboard;
+  const kbTop = kb?.visible ? kb.boundingRect.top : Infinity;
+  const bottomLimit = Math.min(window.innerHeight - BOTTOM_BAR_PX, kbTop) - EDGE_PX;
+  return { below: bottomLimit - r.bottom - OFFSET_PX, above: r.top - EDGE_PX - OFFSET_PX };
+}
 
 // 빈 칸 표시(\placeholder)가 저장값에 섞이지 않게 걷어낸다.
 function cleanLatex(s: string): string {
@@ -62,38 +83,67 @@ function cleanLatex(s: string): string {
 
 interface MathEditorProps {
   initialLatex: string;
+  // 편집기가 붙는 자리: 고치는 중인 수식을 그대로 보여 준다.
+  anchor: ReactNode;
   onSave: (latex: string) => void;
   onCancel: () => void;
 }
 
-export function MathEditor({ initialLatex, onSave, onCancel }: MathEditorProps) {
-  const hostRef = useRef<HTMLDivElement>(null);
+export function MathEditor({ initialLatex, anchor, onSave, onCancel }: MathEditorProps) {
+  const [host, setHost] = useState<HTMLDivElement | null>(null);
+  const anchorRef = useRef<HTMLSpanElement | null>(null);
+  const placedRef = useRef(false);
   const fieldRef = useRef<MathfieldElement | null>(null);
+  // 위/아래는 수식의 화면 위치로만 정한다. 입력하다 편집기 높이가 바뀌어도 방향은 그대로다.
+  // 스크롤·키보드로 수식이 움직여 지금 쪽이 비좁아지고 반대쪽이 확실히 넓을 때만 바꾼다.
+  // 높이는 남은 자리에 맞춰 제한하고, 넘치면 편집기 안에서 스크롤한다.
+  const [place, setPlace] = useState<{ side: Side; maxH: number } | null>(null);
+  const sideRef = useRef<Side>('bottom-start');
+
+  const bindAnchor = (el: HTMLSpanElement | null) => {
+    anchorRef.current = el;
+    if (!el || placedRef.current) return;
+    placedRef.current = true;
+    const { below, above } = measureRoom(el);
+    const s: Side = below >= EDITOR_EST_PX || below >= above ? 'bottom-start' : 'top-start';
+    const room = s === 'bottom-start' ? below : above;
+    sideRef.current = s;
+    setPlace({ side: s, maxH: Math.max(EDITOR_MIN_PX, Math.floor(room)) });
+  };
 
   useEffect(() => {
-    const host = hostRef.current;
     if (!host) return;
     let cancelled = false;
     let mf: MathfieldElement | null = null;
     let kbListener: (() => void) | null = null;
 
-    // 편집기(와 가상 키보드)가 하단 바·키보드에 가리지 않도록 화면 안으로 스크롤한다.
-    // host의 부모가 편집기 상자(Paper)다.
+    // 남은 자리에 맞춰 편집기 최대 높이를 다시 잡고, 지금 쪽이 비좁을 때만 방향을 바꾼다.
+    const update = () => {
+      const { below, above } = measureRoom(anchorRef.current);
+      let side = sideRef.current;
+      const here = side === 'bottom-start' ? below : above;
+      const there = side === 'bottom-start' ? above : below;
+      if (here < EDITOR_COMFORT_PX && there > here + SWITCH_MARGIN_PX) {
+        side = side === 'bottom-start' ? 'top-start' : 'bottom-start';
+      }
+      const room = side === 'bottom-start' ? below : above;
+      const maxH = Math.max(EDITOR_MIN_PX, Math.floor(room));
+      sideRef.current = side;
+      setPlace((p) => (p && (p.side !== side || p.maxH !== maxH) ? { side, maxH } : p));
+    };
+
+    // 가상 키보드가 열리거나 닫히면 페이지 여백을 맞춘다.
+    // 위·아래 어느 쪽도 최소 높이가 안 나올 때만 페이지를 스크롤한다.
     const reveal = () => {
-      const box = host.parentElement;
-      if (!box) return;
       const kb = window.mathVirtualKeyboard;
       const kbOpen = !!kb?.visible;
       // 키보드가 열려 있는 동안만 페이지 아래에 키보드 높이만큼 여백을 둬서, 맨 아래 칸도 위로 올려 볼 수 있게 한다.
       document.body.style.paddingBottom = kbOpen ? `${Math.ceil(kb.boundingRect.height)}px` : '';
-      const bottomLimit =
-        Math.min(window.innerHeight - BOTTOM_BAR_PX, kbOpen ? kb.boundingRect.top : Infinity) - 8;
-      const r = box.getBoundingClientRect();
-      if (r.bottom > bottomLimit) {
-        window.scrollBy({ top: r.bottom - bottomLimit, behavior: 'smooth' });
-      } else if (r.top < 8) {
-        window.scrollBy({ top: r.top - 8, behavior: 'smooth' });
+      const { below, above } = measureRoom(anchorRef.current);
+      if (Math.max(below, above) < EDITOR_MIN_PX) {
+        window.scrollBy({ top: EDITOR_MIN_PX - below, behavior: 'smooth' });
       }
+      update();
     };
 
     // mathlive는 import 시점에 브라우저 전역(window 등)을 쓰므로 서버 렌더링에서 불러오면 안 된다.
@@ -109,9 +159,29 @@ export function MathEditor({ initialLatex, onSave, onCancel }: MathEditorProps) 
       mf.mathVirtualKeyboardPolicy = 'manual';
       mf.style.fontSize = '22px';
       mf.style.width = '100%';
+      // mathlive 자체 테두리·포커스 링은 끈다: 바깥 상자(.host)의 테두리와 겹쳐 두 줄로 보였다.
+      mf.style.border = 'none';
+      mf.style.outline = 'none';
+      mf.style.background = 'transparent';
       host.appendChild(mf);
       fieldRef.current = mf;
-      mf.focus();
+      // 드롭다운은 위치 계산 전까지 문서 (0,0)에 있다. 자리를 잡은 뒤에 포커스한다(최대 30프레임 대기).
+      // mathlive가 preventScroll을 무시할 수 있어, 포커스 전후의 스크롤 위치도 직접 되돌린다.
+      const field = mf;
+      const dropdown = host.parentElement;
+      let frames = 0;
+      const focusWhenPlaced = () => {
+        if (cancelled) return;
+        const placed = !dropdown || dropdown.style.top !== '0px' || dropdown.style.left !== '0px';
+        if (!placed && frames++ < 30) {
+          requestAnimationFrame(focusWhenPlaced);
+          return;
+        }
+        const { scrollX, scrollY } = window;
+        field.focus({ preventScroll: true });
+        window.scrollTo({ left: scrollX, top: scrollY, behavior: 'instant' });
+      };
+      focusWhenPlaced();
 
       // 가상 키보드를 켜고 끌 때(높이가 바뀔 때)마다 가려지지 않는지 다시 본다.
       kbListener = () => requestAnimationFrame(reveal);
@@ -119,8 +189,14 @@ export function MathEditor({ initialLatex, onSave, onCancel }: MathEditorProps) 
       requestAnimationFrame(reveal);
     });
 
+    // 스크롤·창 크기가 바뀌면 남은 자리도 달라진다.
+    window.addEventListener('scroll', update, { passive: true, capture: true });
+    window.addEventListener('resize', update);
+
     return () => {
       cancelled = true;
+      window.removeEventListener('scroll', update, true);
+      window.removeEventListener('resize', update);
       if (kbListener) {
         window.mathVirtualKeyboard?.removeEventListener('geometrychange', kbListener);
       }
@@ -132,74 +208,91 @@ export function MathEditor({ initialLatex, onSave, onCancel }: MathEditorProps) 
     };
     // 편집기가 열릴 때의 값으로만 시작한다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [host]);
 
   const insert = (snippet: string) => {
     const mf = fieldRef.current;
     if (!mf) return;
     mf.insert(snippet, { format: 'latex' });
-    mf.focus();
+    mf.focus({ preventScroll: true });
   };
 
   const save = () => onSave(cleanLatex(fieldRef.current?.value ?? ''));
 
   return (
-    <Paper
-      component="span"
-      withBorder
-      shadow="sm"
-      radius="md"
-      className={classes.root}
-      onKeyDown={(e: React.KeyboardEvent) => {
-        if (e.key === 'Escape') onCancel();
-        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) save();
-      }}
+    <Popover
+      opened={!!place}
+      position={place?.side ?? 'bottom-start'}
+      offset={OFFSET_PX}
+      width={380}
+      withinPortal
+      // 위/아래는 위에서 직접 정한다(flip 끔). 가상 키보드는 팝오버 밖이라 바깥 클릭·포커스 이동으로 닫히면 안 된다.
+      middlewares={{ flip: false, shift: true }}
+      closeOnClickOutside={false}
+      closeOnEscape={false}
+      trapFocus={false}
+      transitionProps={{ duration: 0 }}
     >
-      <div ref={hostRef} className={classes.host} />
-      <div className={classes.buttons}>
-        {BUTTONS.map((b) => (
-          <Button
-            key={b.label}
-            type="button"
-            size="compact-sm"
-            variant="light"
-            color="gray"
-            fw={400}
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => insert(b.snippet)}
-          >
-            {b.label}
+      <Popover.Target>
+        <span ref={bindAnchor} className={classes.anchor}>
+          {anchor}
+        </span>
+      </Popover.Target>
+      <Popover.Dropdown
+        p="xs"
+        className={classes.dropdown}
+        style={{ maxHeight: place?.maxH }}
+        onKeyDown={(e: React.KeyboardEvent) => {
+          if (e.key === 'Escape') onCancel();
+          if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) save();
+        }}
+      >
+        <div ref={setHost} className={classes.host} />
+        <div className={classes.buttons}>
+          {BUTTONS.map((b) => (
+            <Button
+              key={b.label}
+              type="button"
+              size="compact-sm"
+              variant="light"
+              color="gray"
+              fw={400}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => insert(b.snippet)}
+            >
+              {b.label}
+            </Button>
+          ))}
+        </div>
+        <Text span fz={11} c="dimmed" display="block" mb={2}>
+          도형
+        </Text>
+        <div className={classes.buttons}>
+          {GEOMETRY_BUTTONS.map((b) => (
+            <Button
+              key={b.label}
+              type="button"
+              size="compact-sm"
+              variant="light"
+              color="gray"
+              fw={400}
+              title={b.hint}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => insert(b.snippet)}
+            >
+              {b.label}
+            </Button>
+          ))}
+        </div>
+        <Group gap={4}>
+          <Button type="button" size="compact-md" title="Ctrl+Enter" onClick={save}>
+            저장
           </Button>
-        ))}
-      </div>
-      <Text span fz={11} c="dimmed" display="block" mb={2}>
-        도형
-      </Text>
-      <div className={classes.buttons}>
-        {GEOMETRY_BUTTONS.map((b) => (
-          <Button
-            key={b.label}
-            type="button"
-            size="compact-sm"
-            variant="light"
-            color="gray"
-            fw={400}
-            title={b.hint}
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => insert(b.snippet)}
-          >
-            {b.label}
+          <Button type="button" size="compact-md" variant="subtle" color="gray" onClick={onCancel}>
+            취소
           </Button>
-        ))}
-      </div>
-      <Group gap={4}>
-        <Button type="button" size="compact-md" title="Ctrl+Enter" onClick={save}>
-          저장
-        </Button>
-        <Button type="button" size="compact-md" variant="subtle" color="gray" onClick={onCancel}>
-          취소
-        </Button>
-      </Group>
-    </Paper>
+        </Group>
+      </Popover.Dropdown>
+    </Popover>
   );
 }

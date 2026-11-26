@@ -1,5 +1,7 @@
 import katex from 'katex';
 
+import { romanizeLatex } from './mathRoman';
+
 interface RenderOptions {
   throwOnError?: boolean;
   displayMode?: boolean;
@@ -7,11 +9,12 @@ interface RenderOptions {
 
 // KaTeX가 모르는 호 표기(\overparen, \wideparen)는 그리기 전에만 \overgroup으로 바꾼다.
 // 저장되는 LaTeX는 그대로이고, 서버 변환기는 둘 다 한글 `arch {…}`로 바꾼다.
+// 로마체(rm)·이탤릭체(it) 기준도 서버와 같게 그리기 직전에만 적용한다(lib/mathRoman.ts).
 const ARC_ALIAS = /\\(?:overparen|wideparen)(?![A-Za-z])/g;
 
 export function renderLatex(latex: string, options: RenderOptions = {}): string {
   try {
-    return katex.renderToString(latex.replace(ARC_ALIAS, '\\overgroup'), {
+    return katex.renderToString(romanizeLatex(latex.replace(ARC_ALIAS, '\\overgroup')), {
       throwOnError: options.throwOnError ?? false,
       displayMode: options.displayMode ?? false,
     });

@@ -1,10 +1,16 @@
-.root {
-  position: absolute;
-  z-index: 50;
+/* 고치는 중인 수식: 편집기가 붙는 자리를 표시한다. */
+.anchor {
   display: inline-block;
-  width: 380px;
-  max-width: 90vw;
-  padding: var(--mantine-spacing-xs);
+  padding: 0 2px;
+  border-radius: var(--mantine-radius-sm);
+  outline: 2px solid var(--mantine-color-blue-5);
+  outline-offset: 1px;
+}
+
+/* 수식 위·아래에 띄우는 팝오버. 높이는 코드에서 남은 자리에 맞춰 제한하고, 넘치면 안에서 스크롤한다. */
+.dropdown {
+  max-width: calc(100vw - 16px);
+  overflow-y: auto;
   border-color: var(--mantine-color-blue-3);
 }
 
@@ -14,6 +20,11 @@
   padding: 0 4px;
   border: 1px solid var(--mantine-color-gray-4);
   border-radius: var(--mantine-radius-sm);
+}
+
+/* 편집 중임은 바깥 상자의 테두리 색으로 보여 준다. */
+.host:focus-within {
+  border-color: var(--mantine-color-blue-5);
 }
 
 .buttons {

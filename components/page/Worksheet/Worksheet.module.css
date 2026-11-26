@@ -14,16 +14,17 @@
     grid-template-columns: minmax(0, 1fr) 21rem;
   }
 
-  .side {
+  /* 만들기 패널만 위에 붙여 두고, 모양은 페이지와 함께 스크롤한다(안쪽 스크롤로 잘리지 않게).
+     위쪽 여백까지 배경으로 덮어 아래로 지나가는 모양 패널이 비쳐 보이지 않게 한다. */
+  .pinned {
     position: sticky;
-    top: calc(var(--app-shell-header-height, 60px) + var(--mantine-spacing-md));
-    max-height: calc(100dvh - var(--app-shell-header-height, 60px) - 2 * var(--mantine-spacing-md));
+    top: var(--app-shell-header-height, 60px);
+    z-index: 1;
+    margin-top: calc(-1 * var(--mantine-spacing-md));
+    padding-top: var(--mantine-spacing-md);
+    background: var(--mantine-color-body);
+    max-height: calc(100dvh - var(--app-shell-header-height, 60px) - var(--mantine-spacing-md));
     overflow-y: auto;
-  }
-
-  /* 높이가 정해진 세로 칸에서 상자가 찌그러지지 않고 스크롤되게 한다 */
-  .side > * {
-    flex-shrink: 0;
   }
 }
 

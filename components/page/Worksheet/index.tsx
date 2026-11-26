@@ -82,13 +82,15 @@ export function WorksheetClient({ worksheetId }: { worksheetId: string }) {
         />
 
         <Stack gap="md" className={classes.side}>
-          <ExportPanel
-            check={h.check}
-            result={h.result}
-            busy={h.busy}
-            canMake={canMake}
-            onMake={h.makeFile}
-          />
+          <Stack gap="md" className={classes.pinned}>
+            <ExportPanel
+              check={h.check}
+              result={h.result}
+              busy={h.busy}
+              canMake={canMake}
+              onMake={h.makeFile}
+            />
+          </Stack>
           {ws.preset && (
             <PresetPanel
               preset={ws.preset}

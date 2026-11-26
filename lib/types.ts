@@ -125,9 +125,26 @@ export interface PageDetailOut {
     width?: number | null;
     height?: number | null;
   };
-  correction?: Record<string, unknown> | null;
+  correction?: CorrectionOut | null;
   segments?: SegmentOut[];
   poll_after_ms?: number | null;
+}
+
+// 사진 보정 설정과 실제로 쓴 결과. null이면 자동(예전 사진)
+export interface CorrectionOut {
+  mode: 'auto' | 'none' | 'manual';
+  rotation: number;
+  angle?: number; // 90° 회전 위에 더한 미세 회전(시계 방향 °). 없으면 0
+  corners?: number[][] | null;
+  applied?: { corners: number[][]; found: boolean; skew: number } | null;
+}
+
+// corners는 manual에서만, 원본을 rotation만큼 돌린 사진 기준 0~1 비율(왼위·오른위·오른아래·왼아래)
+export interface RecorrectIn {
+  mode: 'auto' | 'none' | 'manual';
+  rotation: 0 | 90 | 180 | 270;
+  angle?: number; // -45~45. 보정이 끝난 결과에 더하는 미세 회전
+  corners?: number[][];
 }
 
 export interface SegmentOut {

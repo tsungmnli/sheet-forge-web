@@ -11,6 +11,7 @@ import type {
   PageListOut,
   PageOut,
   ReadOut,
+  RecorrectIn,
   SegmentOut,
   SegmentPatchIn,
   SegmentPatchOut,
@@ -46,6 +47,7 @@ export function usePhotoWorkshop(examId: string, pageId: string) {
   // null: 범위 고르기 꺼짐, "pending": 시작 칸을 기다리는 중, 그 밖: 시작 칸의 id
   const [rangeStart, setRangeStart] = useState<string | null>(null);
   const [reading, setReading] = useState(false);
+  const [recorrecting, setRecorrecting] = useState(false);
   const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadedRef = useRef(false);
 
@@ -205,6 +207,30 @@ export function usePhotoWorkshop(examId: string, pageId: string) {
     // 읽기는 백그라운드로 진행되므로 진행 상황이 보이는 시험지 화면으로 이동한다
     router.push(`/exams/${examId}`);
   }, [examId, loadPage, router]);
+
+  // 사진 다시 보정하기: 서버가 칸을 비우고 다시 처리한다. 끝날 때까지 loadPage의 폴링이 이어진다
+  const recorrect = useCallback(
+    async (body: RecorrectIn) => {
+      setRecorrecting(true);
+      const res = await apiFetch<PageDetailOut>(`/pages/${pageId}/recorrect`, {
+        method: 'POST',
+        headers: JSON_HEADERS,
+        body: JSON.stringify(body),
+      });
+      setRecorrecting(false);
+      if (res.error) {
+        notify.error(friendlyError(res.error), { persist: true });
+        return false;
+      }
+      setRangeStart(null);
+      loadPage();
+      return true;
+    },
+    [pageId, loadPage],
+  );
+
+  const processingState = page?.processing?.state;
+  const processingBusy = processingState === 'queued' || processingState === 'running';
 
   const saveSegments = useCallback(async () => {
     const body: SegmentsPutIn = {
@@ -397,6 +423,9 @@ export function usePhotoWorkshop(examId: string, pageId: string) {
     prevPage,
     nextPage,
     readPicked,
+    recorrect,
+    recorrecting,
+    processingBusy,
     saveSegments,
     startEdit,
     cancelEdit,

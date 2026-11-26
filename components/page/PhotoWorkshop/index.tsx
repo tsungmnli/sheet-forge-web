@@ -2,7 +2,7 @@
 
 import { useState, type CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
-import { ActionIcon, Box, Button, Group, Paper, Stack, Text } from '@mantine/core';
+import { ActionIcon, Box, Button, Group, Loader, Paper, Stack, Text } from '@mantine/core';
 import {
   IconAlertCircle,
   IconArrowLeft,
@@ -109,6 +109,24 @@ export function PhotoWorkshopClient({ examId, pageId }: { examId: string; pageId
           </Button>
         </Group>
       </Group>
+
+      {/* 사진 처리(처음 올렸을 때·다시 보정할 때) 상태 */}
+      {w.processingBusy && (
+        <Paper withBorder radius="md" px="md" py="sm">
+          <Group gap="xs">
+            <Loader size="sm" />
+            <Text>사진을 정리하고 문제 칸을 나누는 중이에요. 잠시만 기다려 주세요.</Text>
+          </Group>
+        </Paper>
+      )}
+      {page.processing?.state === 'failed' && (
+        <Paper withBorder radius="md" px="md" py="sm">
+          <Group gap="xs" c="red">
+            <IconAlertCircle size={18} />
+            <Text c="red">{page.processing.message || '사진을 정리하지 못했어요.'}</Text>
+          </Group>
+        </Paper>
+      )}
 
       {/* 안내 + 모드 전환 + 고른 개수 + 읽기 */}
       <Paper withBorder radius="md" px="md" py="sm">
@@ -251,6 +269,12 @@ export function PhotoWorkshopClient({ examId, pageId }: { examId: string; pageId
         hasBoth={Boolean(page.image?.original_url && page.image?.corrected_url)}
         showOriginal={showOriginal}
         onShowOriginal={setShowOriginal}
+        correction={page.correction ?? null}
+        originalUrl={page.image?.original_url ?? null}
+        resultUrl={page.image?.corrected_url ?? null}
+        busy={w.processingBusy || w.recorrecting}
+        editing={mode === 'edit'}
+        onRecorrect={w.recorrect}
       />
     </Stack>
   );

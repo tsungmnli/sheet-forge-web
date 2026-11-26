@@ -14,16 +14,14 @@
     grid-template-columns: minmax(0, 1fr) 21rem;
   }
 
-  /* 만들기 패널만 위에 붙여 두고, 모양은 페이지와 함께 스크롤한다(안쪽 스크롤로 잘리지 않게).
-     위쪽 여백까지 배경으로 덮어 아래로 지나가는 모양 패널이 비쳐 보이지 않게 한다. */
-  .pinned {
+  /* 오른쪽 열 전체를 헤더 아래에 붙인다. 화면보다 길면 이 열 안에서만 스크롤한다.
+     예전처럼 만들기 패널만 sticky로 두면 (1) 부모(.side)가 내용 높이뿐이라 모양 패널 높이만큼만
+     따라오다 놓치고, (2) 따라오는 동안 모양 패널이 그 밑으로 들어가 가려지며,
+     (3) SegmentedControl·Switch의 z-index가 sticky의 z-index: 1보다 높아 위로 비쳐 보였다. */
+  .side {
     position: sticky;
-    top: var(--app-shell-header-height, 60px);
-    z-index: 1;
-    margin-top: calc(-1 * var(--mantine-spacing-md));
-    padding-top: var(--mantine-spacing-md);
-    background: var(--mantine-color-body);
-    max-height: calc(100dvh - var(--app-shell-header-height, 60px) - var(--mantine-spacing-md));
+    top: calc(var(--app-shell-header-height, 60px) + var(--mantine-spacing-md));
+    max-height: calc(100dvh - var(--app-shell-header-height, 60px) - 2 * var(--mantine-spacing-md));
     overflow-y: auto;
   }
 }

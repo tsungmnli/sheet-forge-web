@@ -23,6 +23,25 @@
   border-top: 1px solid var(--mantine-color-default-border);
 }
 
+.row[data-dragging] {
+  opacity: 0.4;
+}
+
+.row[data-drop='before'] {
+  box-shadow: 0 -2px 0 0 var(--mantine-primary-color-filled);
+}
+
+.row[data-drop='after'] {
+  box-shadow: 0 2px 0 0 var(--mantine-primary-color-filled);
+}
+
+.grip {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--mantine-color-dimmed);
+  cursor: grab;
+}
+
 .deleted {
   opacity: 0.5;
 }

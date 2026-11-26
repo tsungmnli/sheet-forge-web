@@ -3,7 +3,6 @@
 import { ActionIcon, Button, Group, Paper, Stack, Text } from '@mantine/core';
 import { IconArrowDown, IconArrowUp, IconPlus, IconTrash } from '@tabler/icons-react';
 
-import { InlineView } from '@/components/common/ProblemInline';
 import { confirmDialog } from '@/lib/confirm';
 import { stemBlockPrefix, stemInlinePath } from '@/lib/stemPath';
 import {
@@ -15,6 +14,7 @@ import {
 } from '@/lib/types';
 
 import { BoxBlock } from './BoxBlock';
+import { InlineRow } from './InlineRow';
 import { TableBlock } from './TableBlock';
 import classes from './Problem.module.css';
 import type { useProblemEditing } from './hooks/useProblemEditing';
@@ -46,7 +46,6 @@ function blockHasContent(blk: StemBlockOut): boolean {
 
 // 본문(stem): 문단·상자·표 블록을 보여 주고 고친다. 위·아래 이동·삭제는 모든 블록에 같음.
 export function StemSection({ stem, hintPaths, mathResults, view, editing }: Props) {
-  const { editingInline, setEditingInline, showMathEditor, setShowMathEditor, focusedPath } = view;
   const {
     addStemParagraph,
     addStemBox,
@@ -57,6 +56,7 @@ export function StemSection({ stem, hintPaths, mathResults, view, editing }: Pro
     editStemInline,
     addInlineToParagraph,
     deleteInline,
+    moveStemInline,
   } = editing;
 
   const onDeleteBlock = (bi: number, blk: StemBlockOut) => {
@@ -162,46 +162,16 @@ export function StemSection({ stem, hintPaths, mathResults, view, editing }: Pro
 
             {isParagraphBlock(blk) && (
               <>
-                <div className={classes.stemInlines}>
-                  {blk.inlines.length === 0 && (
-                    <Text span size="sm" c="dimmed">
-                      내용을 추가해 주세요
-                    </Text>
-                  )}
-                  {blk.inlines.map((il, ii) => {
-                    const path = stemInlinePath(bi, ii);
-                    return (
-                      <InlineView
-                        key={ii}
-                        inline={il}
-                        path={path}
-                        isFocused={focusedPath === path}
-                        mathResult={mathResults[path]}
-                        isHint={hintPaths.has(path)}
-                        isEditing={editingInline === path}
-                        isMathEditing={showMathEditor === path}
-                        onEdit={() => setEditingInline(path)}
-                        onEditMath={() => {
-                          setShowMathEditor(path);
-                          setEditingInline(null);
-                        }}
-                        onSaveText={(v) => {
-                          editStemInline(bi, ii, { t: 'text', v });
-                          setEditingInline(null);
-                        }}
-                        onSaveMath={(latex) => {
-                          editStemInline(bi, ii, { t: 'math', latex });
-                          setShowMathEditor(null);
-                        }}
-                        onCancel={() => {
-                          setEditingInline(null);
-                          setShowMathEditor(null);
-                        }}
-                        onDelete={() => deleteInline(bi, ii)}
-                      />
-                    );
-                  })}
-                </div>
+                <InlineRow
+                  inlines={blk.inlines}
+                  pathOf={(ii) => stemInlinePath(bi, ii)}
+                  hintPaths={hintPaths}
+                  mathResults={mathResults}
+                  view={view}
+                  onEdit={(ii, il) => editStemInline(bi, ii, il)}
+                  onDelete={(ii) => deleteInline(bi, ii)}
+                  onMove={(from, to) => moveStemInline(bi, from, to)}
+                />
                 <Group gap={4} mt="xs">
                   <Button
                     size="compact-sm"

@@ -1,34 +1,55 @@
-"use client";
+'use client';
 
-import { useEffect, useRef } from "react";
-import { Button, Group, Paper } from "@mantine/core";
-import type { MathfieldElement } from "mathlive";
+import { useEffect, useRef } from 'react';
+import { Button, Group, Paper, Text } from '@mantine/core';
+import type { MathfieldElement } from 'mathlive';
 
-import classes from "./MathEditor.module.css";
+import classes from './MathEditor.module.css';
 
 const BUTTONS: { label: string; snippet: string }[] = [
-  { label: "분수", snippet: "\\frac{#@}{#?}" },
-  { label: "루트", snippet: "\\sqrt{#@}" },
-  { label: "제곱", snippet: "^{#?}" },
-  { label: "아래첨자", snippet: "_{#?}" },
-  { label: "연립방정식", snippet: "\\begin{cases}#?\\\\#?\\end{cases}" },
-  { label: "순환점", snippet: "\\dot{#@}" },
-  { label: "합성함수", snippet: "\\circ " },
-  { label: "±", snippet: "\\pm " },
-  { label: "×", snippet: "\\times " },
-  { label: "÷", snippet: "\\div " },
-  { label: "≤", snippet: "\\le " },
-  { label: "≥", snippet: "\\ge " },
-  { label: "≠", snippet: "\\ne " },
-  { label: "π", snippet: "\\pi " },
-  { label: "각도", snippet: "^{\\circ}" },
-  { label: "sin", snippet: "\\sin " },
-  { label: "cos", snippet: "\\cos " },
-  { label: "tan", snippet: "\\tan " },
-  { label: "로그", snippet: "\\log_{#?}" },
-  { label: "자연로그", snippet: "\\ln " },
-  { label: "절댓값", snippet: "\\left|#@\\right|" },
-  { label: "괄호", snippet: "\\left(#@\\right)" },
+  { label: '분수', snippet: '\\frac{#@}{#?}' },
+  { label: '루트', snippet: '\\sqrt{#@}' },
+  { label: '제곱', snippet: '^{#?}' },
+  { label: '아래첨자', snippet: '_{#?}' },
+  { label: '연립방정식', snippet: '\\begin{cases}#?\\\\#?\\end{cases}' },
+  { label: '순환점', snippet: '\\dot{#@}' },
+  { label: '합성함수', snippet: '\\circ ' },
+  { label: '±', snippet: '\\pm ' },
+  { label: '×', snippet: '\\times ' },
+  { label: '÷', snippet: '\\div ' },
+  { label: '≤', snippet: '\\le ' },
+  { label: '≥', snippet: '\\ge ' },
+  { label: '≠', snippet: '\\ne ' },
+  { label: 'π', snippet: '\\pi ' },
+  { label: '각도', snippet: '^{\\circ}' },
+  { label: 'sin', snippet: '\\sin ' },
+  { label: 'cos', snippet: '\\cos ' },
+  { label: 'tan', snippet: '\\tan ' },
+  { label: '로그', snippet: '\\log_{#?}' },
+  { label: '자연로그', snippet: '\\ln ' },
+  { label: '절댓값', snippet: '\\left|#@\\right|' },
+  { label: '괄호', snippet: '\\left(#@\\right)' },
+];
+
+// 도형 기호. 글자는 \mathrm으로 감싸 한글에서 곧은 글자(rm)로 나가게 한다.
+// 서버 변환(api/app/export/math)이 풀 수 있는 명령만 쓴다: 호 arch · 선분 bar · 직선 dyad · 반직선 vec · 평행 ⫽ · 수직 BOT.
+const GEOMETRY_BUTTONS: { label: string; snippet: string; hint: string }[] = [
+  { label: '호', snippet: '\\overgroup{\\mathrm{#@}}', hint: '호 AB: 누른 뒤 AB를 입력' },
+  { label: '선분', snippet: '\\overline{\\mathrm{#@}}', hint: '선분 AB: 위에 가로선' },
+  {
+    label: '직선',
+    snippet: '\\overleftrightarrow{\\mathrm{#@}}',
+    hint: '직선 AB: 위에 양쪽 화살표',
+  },
+  {
+    label: '반직선',
+    snippet: '\\overrightarrow{\\mathrm{#@}}',
+    hint: '반직선 AB: 위에 오른쪽 화살표',
+  },
+  { label: '평행', snippet: '\\parallel ', hint: '평행 기호' },
+  { label: '수직', snippet: '\\perp ', hint: '수직 기호' },
+  { label: '각', snippet: '\\angle \\mathrm{#@}', hint: '각 ABC: 누른 뒤 ABC를 입력' },
+  { label: '삼각형', snippet: '\\triangle \\mathrm{#@}', hint: '삼각형 ABC: 누른 뒤 ABC를 입력' },
 ];
 
 // 하단 고정 바(BottomBar)가 차지하는 높이. 편집기가 이 아래로 내려가 가려지지 않게 한다.
@@ -36,7 +57,7 @@ const BOTTOM_BAR_PX = 80;
 
 // 빈 칸 표시(\placeholder)가 저장값에 섞이지 않게 걷어낸다.
 function cleanLatex(s: string): string {
-  return s.replace(/\\placeholder(\[[^\]]*\])?\{([^}]*)\}/g, "$2").trim();
+  return s.replace(/\\placeholder(\[[^\]]*\])?\{([^}]*)\}/g, '$2').trim();
 }
 
 interface MathEditorProps {
@@ -64,20 +85,20 @@ export function MathEditor({ initialLatex, onSave, onCancel }: MathEditorProps) 
       const kb = window.mathVirtualKeyboard;
       const kbOpen = !!kb?.visible;
       // 키보드가 열려 있는 동안만 페이지 아래에 키보드 높이만큼 여백을 둬서, 맨 아래 칸도 위로 올려 볼 수 있게 한다.
-      document.body.style.paddingBottom = kbOpen ? `${Math.ceil(kb.boundingRect.height)}px` : "";
+      document.body.style.paddingBottom = kbOpen ? `${Math.ceil(kb.boundingRect.height)}px` : '';
       const bottomLimit =
         Math.min(window.innerHeight - BOTTOM_BAR_PX, kbOpen ? kb.boundingRect.top : Infinity) - 8;
       const r = box.getBoundingClientRect();
       if (r.bottom > bottomLimit) {
-        window.scrollBy({ top: r.bottom - bottomLimit, behavior: "smooth" });
+        window.scrollBy({ top: r.bottom - bottomLimit, behavior: 'smooth' });
       } else if (r.top < 8) {
-        window.scrollBy({ top: r.top - 8, behavior: "smooth" });
+        window.scrollBy({ top: r.top - 8, behavior: 'smooth' });
       }
     };
 
     // mathlive는 import 시점에 브라우저 전역(window 등)을 쓰므로 서버 렌더링에서 불러오면 안 된다.
     // 편집기가 실제로 열릴 때만 동적으로 불러온다.
-    import("mathlive").then(({ MathfieldElement }) => {
+    import('mathlive').then(({ MathfieldElement }) => {
       if (cancelled) return;
       // 글꼴은 KaTeX CSS(app/layout.tsx)에서 이미 불러오므로 mathlive가 따로 받지 않게 한다.
       MathfieldElement.fontsDirectory = null;
@@ -85,27 +106,27 @@ export function MathEditor({ initialLatex, onSave, onCancel }: MathEditorProps) 
 
       mf = new MathfieldElement();
       mf.value = initialLatex;
-      mf.mathVirtualKeyboardPolicy = "manual";
-      mf.style.fontSize = "22px";
-      mf.style.width = "100%";
+      mf.mathVirtualKeyboardPolicy = 'manual';
+      mf.style.fontSize = '22px';
+      mf.style.width = '100%';
       host.appendChild(mf);
       fieldRef.current = mf;
       mf.focus();
 
       // 가상 키보드를 켜고 끌 때(높이가 바뀔 때)마다 가려지지 않는지 다시 본다.
       kbListener = () => requestAnimationFrame(reveal);
-      window.mathVirtualKeyboard?.addEventListener("geometrychange", kbListener);
+      window.mathVirtualKeyboard?.addEventListener('geometrychange', kbListener);
       requestAnimationFrame(reveal);
     });
 
     return () => {
       cancelled = true;
       if (kbListener) {
-        window.mathVirtualKeyboard?.removeEventListener("geometrychange", kbListener);
+        window.mathVirtualKeyboard?.removeEventListener('geometrychange', kbListener);
       }
       // 가상 키보드는 페이지에 하나뿐인 전역 요소라서, 편집기를 닫을 때 같이 닫아 주지 않으면 화면에 남는다.
       window.mathVirtualKeyboard?.hide();
-      document.body.style.paddingBottom = "";
+      document.body.style.paddingBottom = '';
       mf?.remove();
       fieldRef.current = null;
     };
@@ -116,11 +137,11 @@ export function MathEditor({ initialLatex, onSave, onCancel }: MathEditorProps) 
   const insert = (snippet: string) => {
     const mf = fieldRef.current;
     if (!mf) return;
-    mf.insert(snippet, { format: "latex" });
+    mf.insert(snippet, { format: 'latex' });
     mf.focus();
   };
 
-  const save = () => onSave(cleanLatex(fieldRef.current?.value ?? ""));
+  const save = () => onSave(cleanLatex(fieldRef.current?.value ?? ''));
 
   return (
     <Paper
@@ -130,8 +151,8 @@ export function MathEditor({ initialLatex, onSave, onCancel }: MathEditorProps) 
       radius="md"
       className={classes.root}
       onKeyDown={(e: React.KeyboardEvent) => {
-        if (e.key === "Escape") onCancel();
-        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) save();
+        if (e.key === 'Escape') onCancel();
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) save();
       }}
     >
       <div ref={hostRef} className={classes.host} />
@@ -144,6 +165,26 @@ export function MathEditor({ initialLatex, onSave, onCancel }: MathEditorProps) 
             variant="light"
             color="gray"
             fw={400}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => insert(b.snippet)}
+          >
+            {b.label}
+          </Button>
+        ))}
+      </div>
+      <Text span fz={11} c="dimmed" display="block" mb={2}>
+        도형
+      </Text>
+      <div className={classes.buttons}>
+        {GEOMETRY_BUTTONS.map((b) => (
+          <Button
+            key={b.label}
+            type="button"
+            size="compact-sm"
+            variant="light"
+            color="gray"
+            fw={400}
+            title={b.hint}
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => insert(b.snippet)}
           >

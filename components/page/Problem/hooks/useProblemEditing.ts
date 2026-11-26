@@ -11,6 +11,15 @@ const MAX_BOX_PARAGRAPHS = 30;
 const MAX_TABLE_ROWS = 40;
 const MAX_TABLE_COLS = 8;
 
+// 목록에서 from번째 조각을 빼서 to번째 자리(뺀 뒤 기준)에 넣는다
+function moveItem<T>(arr: T[], from: number, to: number): T[] {
+  if (from === to || from < 0 || to < 0 || from >= arr.length || to >= arr.length) return arr;
+  const next = [...arr];
+  const [item] = next.splice(from, 1);
+  next.splice(to, 0, item);
+  return next;
+}
+
 // 지문·보기 편집 도우미. 전부 updateContent로 내용만 바꾸고, 저장은 useProblemData의 자동 저장이 맡는다.
 export function useProblemEditing(updateContent: ProblemData['updateContent']) {
   // --- 본문 블록 공통 ---
@@ -120,6 +129,21 @@ export function useProblemEditing(updateContent: ProblemData['updateContent']) {
     [updateContent],
   );
 
+  // 끌어서 순서 바꾸기
+  const moveStemInline = useCallback(
+    (bi: number, from: number, to: number) => {
+      updateContent((prev) => ({
+        ...prev,
+        stem: prev.stem.map((blk, b) =>
+          b === bi && isParagraphBlock(blk)
+            ? { ...blk, inlines: moveItem(blk.inlines, from, to) }
+            : blk,
+        ),
+      }));
+    },
+    [updateContent],
+  );
+
   // --- 상자 ---
   const editBoxTitle = useCallback(
     (bi: number, title: string) => {
@@ -174,6 +198,25 @@ export function useProblemEditing(updateContent: ProblemData['updateContent']) {
           [arr[p], arr[ni]] = [arr[ni], arr[p]];
           return { ...blk, paragraphs: arr };
         }),
+      }));
+    },
+    [updateContent],
+  );
+
+  const moveBoxInline = useCallback(
+    (bi: number, p: number, from: number, to: number) => {
+      updateContent((prev) => ({
+        ...prev,
+        stem: prev.stem.map((blk, b) =>
+          b === bi && isBoxBlock(blk)
+            ? {
+                ...blk,
+                paragraphs: blk.paragraphs.map((para, pi) =>
+                  pi === p ? { ...para, inlines: moveItem(para.inlines, from, to) } : para,
+                ),
+              }
+            : blk,
+        ),
       }));
     },
     [updateContent],
@@ -481,11 +524,13 @@ export function useProblemEditing(updateContent: ProblemData['updateContent']) {
     moveStemParagraph,
     addInlineToParagraph,
     deleteInline,
+    moveStemInline,
     editBoxTitle,
     addBoxParagraph,
     deleteBoxParagraph,
     moveBoxParagraph,
     editBoxInline,
+    moveBoxInline,
     addBoxInline,
     deleteBoxInline,
     addTableRow,

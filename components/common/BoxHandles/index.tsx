@@ -39,15 +39,29 @@ export function applyDrag(
 
 type Handle = { mode: DragMode; style: CSSProperties };
 
-// 핸들은 모두 네모 안쪽에 둔다. 바깥으로 삐져나오면 사진 가장자리에서 잘리고 글자·옆 칸을 가린다.
 // 칸이 작을 때는 누르는 영역도 칸 크기에 맞춰 줄어서(min) 가운데를 잡아 옮길 자리가 남는다.
 const EDGE = 'min(10px, 20%)';
 
-const EDGES: Handle[] = [
+// inside: 변 핸들이 네모 안쪽 띠에만 있다(그림 범위 편집기가 원래 쓰던 방식).
+const INSIDE_EDGES: Handle[] = [
   { mode: 'n', style: { left: 0, right: 0, top: 0, height: EDGE, cursor: 'ns-resize' } },
   { mode: 's', style: { left: 0, right: 0, bottom: 0, height: EDGE, cursor: 'ns-resize' } },
   { mode: 'w', style: { top: 0, bottom: 0, left: 0, width: EDGE, cursor: 'ew-resize' } },
   { mode: 'e', style: { top: 0, bottom: 0, right: 0, width: EDGE, cursor: 'ew-resize' } },
+];
+
+// corner: 변 핸들이 눈에 보이는 테두리를 가운데에 두고 바깥(--edge-out)과 안쪽(--edge-in)에 걸친다.
+// 안쪽 띠만 있으면 테두리 위에서는 '이동' 커서이고 한참 안으로 들어가야 크기 조절 커서가 나온다.
+// 테두리 두께(BORDER)는 .seg·.regionBox의 border와 같아야 한다. 자식은 테두리 안쪽(padding box) 기준으로 놓이기 때문이다.
+const BORDER = 2;
+const OUT = `calc(var(--edge-out) * -1 - ${BORDER}px)`;
+const THICK = `calc(var(--edge-out) + ${BORDER}px + var(--edge-in))`;
+
+const STRADDLE_EDGES: Handle[] = [
+  { mode: 'n', style: { left: 0, right: 0, top: OUT, height: THICK, cursor: 'ns-resize' } },
+  { mode: 's', style: { left: 0, right: 0, bottom: OUT, height: THICK, cursor: 'ns-resize' } },
+  { mode: 'w', style: { top: 0, bottom: 0, left: OUT, width: THICK, cursor: 'ew-resize' } },
+  { mode: 'e', style: { top: 0, bottom: 0, right: OUT, width: THICK, cursor: 'ew-resize' } },
 ];
 
 // 모서리 핸들 4개. inset은 모서리 칸을 네모 모서리에서 얼마나 띄울지 정한다.
@@ -78,7 +92,7 @@ export function BoxHandles({
 }) {
   return (
     <>
-      {EDGES.map((h) => (
+      {(anchor === 'corner' ? STRADDLE_EDGES : INSIDE_EDGES).map((h) => (
         <div key={h.mode} className={classes.edge} style={h.style} onPointerDown={onDown(h.mode)} />
       ))}
       {CORNERS[anchor].map((h) => (

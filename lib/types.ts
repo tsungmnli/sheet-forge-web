@@ -229,6 +229,8 @@ export interface MathInlineOut {
   latex: string;
   breaks?: number[] | null;
   conf?: number | null;
+  // 웹에서 못 고치는 수식: 내보낸 한글 파일에서 직접 고치겠다는 표시. 내보내기에는 원본 LaTeX가 글자로 들어간다.
+  hwp_fix?: boolean | null;
 }
 
 export interface ImageInlineOut {
@@ -303,7 +305,7 @@ export interface ContentOut {
 
 export interface HintOut {
   path: string;
-  kind: 'low_confidence' | 'math_warning';
+  kind: 'low_confidence' | 'math_warning' | 'hwp_fix';
   message?: string | null;
 }
 

@@ -1,25 +1,20 @@
-"use client";
+'use client';
 
-import { ActionIcon, Button, Group, Paper, Stack, Text } from "@mantine/core";
-import {
-  IconArrowDown,
-  IconArrowUp,
-  IconPlus,
-  IconTrash,
-} from "@tabler/icons-react";
+import { ActionIcon, Button, Group, Paper, Stack, Text } from '@mantine/core';
+import { IconArrowDown, IconArrowUp, IconPlus, IconTrash } from '@tabler/icons-react';
 
-import { InlineView } from "@/components/common/ProblemInline";
-import { choiceBlockPrefix, choiceInlinePath } from "@/lib/stemPath";
-import type { ChoicesOut, MathResultOut } from "@/lib/types";
+import { InlineView } from '@/components/common/ProblemInline';
+import { choiceBlockPrefix, choiceInlinePath } from '@/lib/stemPath';
+import type { ChoicesOut, MathResultOut } from '@/lib/types';
 
-import classes from "./Problem.module.css";
-import type { useProblemEditing } from "./hooks/useProblemEditing";
-import type { useProblemView } from "./hooks/useProblemView";
+import classes from './Problem.module.css';
+import type { useProblemEditing } from './hooks/useProblemEditing';
+import type { useProblemView } from './hooks/useProblemView';
 
 type View = ReturnType<typeof useProblemView>;
 type Editing = ReturnType<typeof useProblemEditing>;
 
-const CHOICE_LABELS = ["①", "②", "③", "④", "⑤"];
+const CHOICE_LABELS = ['①', '②', '③', '④', '⑤'];
 const MAX_CHOICES = 5;
 
 interface Props {
@@ -31,20 +26,8 @@ interface Props {
 }
 
 // 선택지: 추가(최대 5개)·없음, 순서 바꾸기·삭제, 선택지 안의 글/수식 조각 편집
-export function ChoiceSection({
-  choices,
-  hintPaths,
-  mathResults,
-  view,
-  editing,
-}: Props) {
-  const {
-    editingInline,
-    setEditingInline,
-    showMathEditor,
-    setShowMathEditor,
-    focusedPath,
-  } = view;
+export function ChoiceSection({ choices, hintPaths, mathResults, view, editing }: Props) {
+  const { editingInline, setEditingInline, showMathEditor, setShowMathEditor, focusedPath } = view;
   const {
     addChoice,
     setChoicesNone,
@@ -86,12 +69,7 @@ export function ChoiceSection({
               >
                 추가
               </Button>
-              <Button
-                size="compact-sm"
-                variant="subtle"
-                color="gray"
-                onClick={setChoicesNone}
-              >
+              <Button size="compact-sm" variant="subtle" color="gray" onClick={setChoicesNone}>
                 없음
               </Button>
             </>
@@ -164,11 +142,11 @@ export function ChoiceSection({
                     setEditingInline(null);
                   }}
                   onSaveText={(v) => {
-                    editChoiceInline(ci, ii, { t: "text", v });
+                    editChoiceInline(ci, ii, { t: 'text', v });
                     setEditingInline(null);
                   }}
                   onSaveMath={(latex) => {
-                    editChoiceInline(ci, ii, { t: "math", latex });
+                    editChoiceInline(ci, ii, { t: 'math', latex });
                     setShowMathEditor(null);
                   }}
                   onCancel={() => {
@@ -176,6 +154,15 @@ export function ChoiceSection({
                     setShowMathEditor(null);
                   }}
                   onDelete={() => deleteChoiceInline(ci, ii)}
+                  onToggleHwpFix={
+                    il.t === 'math'
+                      ? () =>
+                          editChoiceInline(ci, ii, {
+                            ...il,
+                            hwp_fix: il.hwp_fix ? undefined : true,
+                          })
+                      : undefined
+                  }
                 />
               );
             })}
@@ -186,7 +173,7 @@ export function ChoiceSection({
               size="compact-sm"
               variant="light"
               color="gray"
-              onClick={() => addInlineToChoice(ci, { t: "text", v: "" })}
+              onClick={() => addInlineToChoice(ci, { t: 'text', v: '' })}
             >
               글 추가
             </Button>
@@ -194,7 +181,7 @@ export function ChoiceSection({
               size="compact-sm"
               variant="light"
               color="gray"
-              onClick={() => addInlineToChoice(ci, { t: "math", latex: "" })}
+              onClick={() => addInlineToChoice(ci, { t: 'math', latex: '' })}
             >
               수식 추가
             </Button>

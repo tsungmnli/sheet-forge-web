@@ -22,14 +22,69 @@
   background: var(--mantine-color-blue-0);
 }
 
-.inline[data-hint="true"] {
+.inline[data-hint='true'] {
   background: var(--mantine-color-yellow-1);
 }
 
-.inline[data-focused="true"] {
+.inline[data-focused='true'] {
   outline: 2px solid var(--mantine-color-blue-5);
   outline-offset: 1px;
   background: light-dark(var(--mantine-color-blue-0), var(--mantine-color-blue-9));
+}
+
+/* 끌어서 순서 바꾸기 */
+.grip {
+  flex-shrink: 0;
+  margin-right: -3px;
+  color: var(--mantine-color-gray-5);
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 100ms;
+}
+
+.inline:hover .grip {
+  opacity: 1;
+}
+
+.inline[draggable='true']:active .grip {
+  cursor: grabbing;
+}
+
+.inline[data-dragging],
+.imageWrap[data-dragging] {
+  opacity: 0.4;
+}
+
+.inline[data-drop='before'],
+.imageWrap[data-drop='before'] {
+  box-shadow: -3px 0 0 0 var(--mantine-color-blue-5);
+}
+
+.inline[data-drop='after'],
+.imageWrap[data-drop='after'] {
+  box-shadow: 3px 0 0 0 var(--mantine-color-blue-5);
+}
+
+/* 한글에서 고치기 표시: 마우스를 올리면 보이고, 표시했거나 변환이 안 되는 수식은 늘 보인다 */
+.flag {
+  display: inline-flex;
+  color: var(--mantine-color-gray-4);
+  opacity: 0;
+  transition: opacity 100ms;
+}
+
+.inline:hover .flag,
+.flag[data-on],
+.flag[data-alert] {
+  opacity: 1;
+}
+
+.flag:hover {
+  color: var(--mantine-color-orange-6);
+}
+
+.flag[data-on] {
+  color: var(--mantine-color-orange-7);
 }
 
 .delete {

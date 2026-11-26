@@ -4,10 +4,10 @@ import { useState } from 'react';
 import { ActionIcon, Button, Group, Stack, Text, TextInput } from '@mantine/core';
 import { IconArrowDown, IconArrowUp, IconPlus, IconTrash } from '@tabler/icons-react';
 
-import { InlineView } from '@/components/common/ProblemInline';
 import { stemBoxPath } from '@/lib/stemPath';
 import type { BoxBlockOut, MathResultOut } from '@/lib/types';
 
+import { InlineRow } from './InlineRow';
 import classes from './Problem.module.css';
 import type { useProblemEditing } from './hooks/useProblemEditing';
 import type { useProblemView } from './hooks/useProblemView';
@@ -28,7 +28,6 @@ interface Props {
 
 // 상자 블록: 제목(클릭하여 수정, 비우면 제목 없는 상자)과 여러 줄. 각 줄은 문단과 같은 조각 편집.
 export function BoxBlock({ bi, block, hintPaths, mathResults, view, editing }: Props) {
-  const { editingInline, setEditingInline, showMathEditor, setShowMathEditor, focusedPath } = view;
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleVal, setTitleVal] = useState(block.title ?? '');
 
@@ -38,6 +37,7 @@ export function BoxBlock({ bi, block, hintPaths, mathResults, view, editing }: P
     deleteBoxParagraph,
     moveBoxParagraph,
     editBoxInline,
+    moveBoxInline,
     addBoxInline,
     deleteBoxInline,
   } = editing;
@@ -77,7 +77,7 @@ export function BoxBlock({ bi, block, hintPaths, mathResults, view, editing }: P
             setEditingTitle(true);
           }}
         >
-          {block.title || '제목 없음 (클릭하여 제목 추가)'}
+          {block.title || '제목 없음'}
         </Text>
       )}
 
@@ -117,46 +117,16 @@ export function BoxBlock({ bi, block, hintPaths, mathResults, view, editing }: P
               </ActionIcon>
             </Group>
 
-            <div className={classes.stemInlines}>
-              {para.inlines.length === 0 && (
-                <Text span size="sm" c="dimmed">
-                  내용을 추가해 주세요
-                </Text>
-              )}
-              {para.inlines.map((il, ii) => {
-                const path = stemBoxPath(bi, p, ii);
-                return (
-                  <InlineView
-                    key={ii}
-                    inline={il}
-                    path={path}
-                    isFocused={focusedPath === path}
-                    mathResult={mathResults[path]}
-                    isHint={hintPaths.has(path)}
-                    isEditing={editingInline === path}
-                    isMathEditing={showMathEditor === path}
-                    onEdit={() => setEditingInline(path)}
-                    onEditMath={() => {
-                      setShowMathEditor(path);
-                      setEditingInline(null);
-                    }}
-                    onSaveText={(v) => {
-                      editBoxInline(bi, p, ii, { t: 'text', v });
-                      setEditingInline(null);
-                    }}
-                    onSaveMath={(latex) => {
-                      editBoxInline(bi, p, ii, { t: 'math', latex });
-                      setShowMathEditor(null);
-                    }}
-                    onCancel={() => {
-                      setEditingInline(null);
-                      setShowMathEditor(null);
-                    }}
-                    onDelete={() => deleteBoxInline(bi, p, ii)}
-                  />
-                );
-              })}
-            </div>
+            <InlineRow
+              inlines={para.inlines}
+              pathOf={(ii) => stemBoxPath(bi, p, ii)}
+              hintPaths={hintPaths}
+              mathResults={mathResults}
+              view={view}
+              onEdit={(ii, il) => editBoxInline(bi, p, ii, il)}
+              onDelete={(ii) => deleteBoxInline(bi, p, ii)}
+              onMove={(from, to) => moveBoxInline(bi, p, from, to)}
+            />
 
             <Group gap={4} mt={4}>
               <Button

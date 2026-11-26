@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { ActionIcon, Button, Group, Menu, Stack, Text } from "@mantine/core";
-import { IconPlus, IconTrash } from "@tabler/icons-react";
+import { ActionIcon, Button, Group, Menu, Stack, Text } from '@mantine/core';
+import { IconPlus, IconTrash } from '@tabler/icons-react';
 
-import { InlineView } from "@/components/common/ProblemInline";
-import { stemTableCellPath } from "@/lib/stemPath";
-import type { MathResultOut, TableBlockOut } from "@/lib/types";
+import { InlineView } from '@/components/common/ProblemInline';
+import { stemTableCellPath } from '@/lib/stemPath';
+import type { MathResultOut, TableBlockOut } from '@/lib/types';
 
-import classes from "./Problem.module.css";
-import type { useProblemEditing } from "./hooks/useProblemEditing";
-import type { useProblemView } from "./hooks/useProblemView";
+import classes from './Problem.module.css';
+import type { useProblemEditing } from './hooks/useProblemEditing';
+import type { useProblemView } from './hooks/useProblemView';
 
 type View = ReturnType<typeof useProblemView>;
 type Editing = ReturnType<typeof useProblemEditing>;
@@ -27,16 +27,8 @@ interface Props {
 }
 
 // 표 블록: 격자로 보여 주고 칸을 눌러 조각을 고친다. 행·열 추가/삭제.
-export function TableBlock({
-  bi,
-  block,
-  hintPaths,
-  mathResults,
-  view,
-  editing,
-}: Props) {
-  const { editingInline, setEditingInline, showMathEditor, setShowMathEditor, focusedPath } =
-    view;
+export function TableBlock({ bi, block, hintPaths, mathResults, view, editing }: Props) {
+  const { editingInline, setEditingInline, showMathEditor, setShowMathEditor, focusedPath } = view;
   const {
     addTableRow,
     deleteTableRow,
@@ -102,14 +94,14 @@ export function TableBlock({
                             }}
                             onSaveText={(v) => {
                               editTableCellInline(bi, r, c, ii, {
-                                t: "text",
+                                t: 'text',
                                 v,
                               });
                               setEditingInline(null);
                             }}
                             onSaveMath={(latex) => {
                               editTableCellInline(bi, r, c, ii, {
-                                t: "math",
+                                t: 'math',
                                 latex,
                               });
                               setShowMathEditor(null);
@@ -118,8 +110,15 @@ export function TableBlock({
                               setEditingInline(null);
                               setShowMathEditor(null);
                             }}
-                            onDelete={() =>
-                              deleteTableCellInline(bi, r, c, ii)
+                            onDelete={() => deleteTableCellInline(bi, r, c, ii)}
+                            onToggleHwpFix={
+                              il.t === 'math'
+                                ? () =>
+                                    editTableCellInline(bi, r, c, ii, {
+                                      ...il,
+                                      hwp_fix: il.hwp_fix ? undefined : true,
+                                    })
+                                : undefined
                             }
                           />
                         );
@@ -139,8 +138,8 @@ export function TableBlock({
                           <Menu.Item
                             onClick={() =>
                               addTableCellInline(bi, r, c, {
-                                t: "text",
-                                v: "",
+                                t: 'text',
+                                v: '',
                               })
                             }
                           >
@@ -149,8 +148,8 @@ export function TableBlock({
                           <Menu.Item
                             onClick={() =>
                               addTableCellInline(bi, r, c, {
-                                t: "math",
-                                latex: "",
+                                t: 'math',
+                                latex: '',
                               })
                             }
                           >

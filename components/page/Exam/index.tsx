@@ -28,6 +28,8 @@ import { PhotoArea } from './PhotoArea';
 import { ProblemList, type Filter, type RowAction } from './ProblemList';
 import { StepIndicator } from './StepIndicator';
 import { useExamActions } from './hooks/useExamActions';
+import { useExamNotes } from './hooks/useExamNotes';
+import { useExamTitle } from './hooks/useExamTitle';
 import classes from './Exam.module.css';
 
 const EMPTY_EXAM: Exam = {
@@ -49,11 +51,12 @@ const STATUS_ORDER: Record<ProblemStatus, number> = {
 
 export function ExamClient({ examId }: { examId: string }) {
   const router = useRouter();
-  const { exam: real, error, reload } = useExam(examId);
+  const { exam: real, error, etag, reload } = useExam(examId);
   const exam = real ?? EMPTY_EXAM;
-  // 직접 고친 제목이 있으면 그걸, 없으면 서버 제목을 쓴다 (effect로 state를 동기화하지 않는다)
-  const [titleDraft, setTitleDraft] = useState<string | null>(null);
-  const title = titleDraft ?? real?.title ?? '';
+  // 제목은 서버에 저장한다. 저장하는 동안은 새 제목을 먼저 보여 준다
+  const { title, saveTitle } = useExamTitle(examId, real?.title ?? '', etag, reload);
+  // 학생 이름·메모도 서버에 저장한다
+  const { saveNotes } = useExamNotes(examId, etag, reload);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const [filter, setFilter] = useState<Filter>('all');
@@ -182,7 +185,7 @@ export function ExamClient({ examId }: { examId: string }) {
 
   return (
     <Stack gap="lg" className={classes.content}>
-      <ExamHeader exam={{ ...exam, title }} onTitleChange={setTitleDraft} />
+      <ExamHeader exam={{ ...exam, title }} onTitleChange={saveTitle} onNotesChange={saveNotes} />
       <StepIndicator currentStep={step} />
       <NextTaskCard task={nextTask} loading={a.busy || !!a.uploading} />
       <ProblemList

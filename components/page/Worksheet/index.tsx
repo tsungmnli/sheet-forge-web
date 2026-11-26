@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { Button, Group, Stack, Text, TextInput } from "@mantine/core";
-import { IconAlertCircle, IconArrowLeft } from "@tabler/icons-react";
+import Link from 'next/link';
+import { Button, Group, Stack, Text, TextInput } from '@mantine/core';
+import { IconAlertCircle, IconArrowLeft } from '@tabler/icons-react';
 
-import { PageLoader } from "@/components/common/PageLoader";
-import { ExportPanel } from "./ExportPanel";
-import { ItemList } from "./ItemList";
-import { PresetPanel } from "./PresetPanel";
-import { useWorksheet } from "./hooks/useWorksheet";
-import classes from "./Worksheet.module.css";
+import { PageLoader } from '@/components/common/PageLoader';
+import { ExportPanel } from './ExportPanel';
+import { ItemList } from './ItemList';
+import { PresetPanel } from './PresetPanel';
+import { useWorksheet } from './hooks/useWorksheet';
+import classes from './Worksheet.module.css';
 
 export function WorksheetClient({ worksheetId }: { worksheetId: string }) {
   const h = useWorksheet(worksheetId);
@@ -35,7 +35,7 @@ export function WorksheetClient({ worksheetId }: { worksheetId: string }) {
       <Group>
         <Button
           component={Link}
-          href={examId ? `/exams/${examId}` : "/"}
+          href={examId ? `/exams/${examId}` : '/'}
           variant="subtle"
           color="gray"
           leftSection={<IconArrowLeft size={18} />}
@@ -52,8 +52,8 @@ export function WorksheetClient({ worksheetId }: { worksheetId: string }) {
           onChange={(e) => h.setTitleDraft(e.currentTarget.value)}
           onBlur={h.saveTitle}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.nativeEvent.isComposing) e.currentTarget.blur();
-            if (e.key === "Escape") {
+            if (e.key === 'Enter' && !e.nativeEvent.isComposing) e.currentTarget.blur();
+            if (e.key === 'Escape') {
               h.resetTitle();
               e.currentTarget.blur();
             }
@@ -63,7 +63,7 @@ export function WorksheetClient({ worksheetId }: { worksheetId: string }) {
           placeholder="문제지 제목"
         />
         <Text c="dimmed" mt={4}>
-          문제 {ws.items.length}개{ws.student ? ` · ${ws.student}` : ""}
+          문제 {ws.items.length}개{ws.student ? ` · ${ws.student}` : ''}
         </Text>
       </div>
 
@@ -71,7 +71,9 @@ export function WorksheetClient({ worksheetId }: { worksheetId: string }) {
         items={ws.items}
         saving={h.saving}
         canUndo={h.undoIds !== null}
-        onMove={h.move}
+        undoMessage={h.undoMessage}
+        onReorder={h.reorder}
+        onSortBySourceNumber={h.sortBySourceNumber}
         onRemove={h.removeAt}
         onUndo={h.undoRemove}
       />

@@ -17,6 +17,7 @@ export function useWorksheet(worksheetId: string) {
   const [saving, setSaving] = useState(false);
   const [titleDraft, setTitleDraft] = useState('');
   const [undoIds, setUndoIds] = useState<string[] | null>(null);
+  const [undoMessage, setUndoMessage] = useState('');
 
   const loadCheck = useCallback(async () => {
     const c = await apiFetch<CheckOut>(`/worksheets/${worksheetId}/check`);
@@ -95,26 +96,60 @@ export function useWorksheet(worksheetId: string) {
     [send, worksheetId],
   );
 
-  const move = useCallback(
-    async (index: number, dir: -1 | 1) => {
-      if (!ws || saving) return;
-      const j = index + dir;
-      if (j < 0 || j >= ws.items.length) return;
+  // 끌어서 놓은 행을 from 자리에서 to 자리로 옮긴다. 실수로 놓기 쉬워서 되돌리기를 함께 띄운다.
+  const reorder = useCallback(
+    async (from: number, to: number) => {
+      if (!ws || saving || from === to) return;
+      if (from < 0 || to < 0 || from >= ws.items.length || to >= ws.items.length) return;
+      const before = ws.items.map((i) => i.problem_id);
       const items = [...ws.items];
-      [items[index], items[j]] = [items[j], items[index]];
+      const [moved] = items.splice(from, 1);
+      items.splice(to, 0, moved);
       setWs({ ...ws, items });
-      setUndoIds(null);
-      await putIds(items.map((i) => i.problem_id));
+      const ok = await putIds(items.map((i) => i.problem_id));
+      if (ok) {
+        setUndoMessage('순서를 바꿨어요.');
+        setUndoIds(before);
+      }
     },
     [ws, saving, putIds],
   );
+
+  // 시험지의 원래 문제 번호 순으로 다시 늘어놓는다. 번호가 없는 문제는 맨 뒤, 같은 번호끼리는 지금 순서를 지킨다.
+  const sortBySourceNumber = useCallback(async () => {
+    if (!ws || saving) return;
+    const key = (n: string | null | undefined) => {
+      const m = n ? /\d+/.exec(n) : null;
+      return m ? Number(m[0]) : Number.POSITIVE_INFINITY;
+    };
+    const items = [...ws.items].sort((a, b) => {
+      const ka = key(a.source_number);
+      const kb = key(b.source_number);
+      return ka === kb ? 0 : ka < kb ? -1 : 1;
+    });
+    if (items.every((it, i) => it.problem_id === ws.items[i].problem_id)) {
+      notify.info('이미 문제 번호 순서예요.');
+      return;
+    }
+    const before = ws.items.map((i) => i.problem_id);
+    setWs({ ...ws, items });
+    const ok = await putIds(items.map((i) => i.problem_id));
+    // 마음에 안 들면 한 번에 원래 순서로 돌아올 수 있게 한다(되돌리기 막대는 '빼기'와 같이 쓴다)
+    if (ok) {
+      setUndoMessage('문제 번호 순서로 정렬했어요.');
+      setUndoIds(before);
+    }
+  }, [ws, saving, putIds]);
 
   const removeAt = useCallback(
     async (index: number) => {
       if (!ws || saving) return;
       const before = ws.items.map((i) => i.problem_id);
       const ok = await putIds(before.filter((_, i) => i !== index));
-      if (ok) setUndoIds(before);
+      if (ok) {
+        setUndoMessage('문제를 뺐어요.');
+        setUndoIds(before);
+      }
     },
     [ws, saving, putIds],
   );
@@ -161,9 +196,11 @@ export function useWorksheet(worksheetId: string) {
     titleDraft,
     setTitleDraft,
     undoIds,
+    undoMessage,
     saveTitle,
     resetTitle,
-    move,
+    reorder,
+    sortBySourceNumber,
     removeAt,
     undoRemove,
     makeFile,

@@ -1,6 +1,16 @@
 .edge {
   position: absolute;
   touch-action: none;
+  /* 테두리에서 바깥·안쪽으로 얼마나 걸칠지. 마우스는 좁게, 손가락은 넓게 */
+  --edge-out: 6px;
+  --edge-in: min(8px, 20%);
+}
+
+@media (pointer: coarse) {
+  .edge {
+    --edge-out: 12px;
+    --edge-in: min(12px, 25%);
+  }
 }
 
 .corner {

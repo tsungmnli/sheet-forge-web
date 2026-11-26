@@ -117,7 +117,8 @@ export function useExamActions(examId: string, title: string, reload: () => void
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         from_exam_id: examId,
-        title: title ? `${title} 문제지` : '',
+        // 시험지 제목이 이미 '문제지'로 끝나면 또 붙이지 않는다
+        title: !title || title.trim().endsWith('문제지') ? title : `${title} 문제지`,
       }),
     });
     setBusy(false);

@@ -1,16 +1,11 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { Anchor, Badge, Button, Group, List, Paper, Stack, Text, Title } from "@mantine/core";
-import { IconDownload, IconFileText } from "@tabler/icons-react";
+import Link from 'next/link';
+import { Anchor, Badge, Button, Group, List, Paper, Stack, Text, Title } from '@mantine/core';
+import { IconDownload, IconFileText } from '@tabler/icons-react';
 
-import { saveBase64 } from "./saveBase64";
-import {
-  SEVERITY_COLOR,
-  SEVERITY_LABEL,
-  type CheckOut,
-  type ExportOut,
-} from "./types";
+import { saveBase64 } from './saveBase64';
+import { SEVERITY_COLOR, SEVERITY_LABEL, type CheckOut, type ExportOut } from './types';
 
 interface Props {
   check: CheckOut | null;
@@ -21,8 +16,8 @@ interface Props {
 }
 
 export function ExportPanel({ check, result, busy, canMake, onMake }: Props) {
-  const shown = result?.report.items.filter((i) => i.severity !== "info") ?? [];
-  const info = result?.report.items.filter((i) => i.severity === "info") ?? [];
+  const shown = result?.report.items.filter((i) => i.severity !== 'info') ?? [];
+  const info = result?.report.items.filter((i) => i.severity === 'info') ?? [];
 
   return (
     <>
@@ -44,7 +39,7 @@ export function ExportPanel({ check, result, busy, canMake, onMake }: Props) {
 
       <Paper withBorder p="md">
         <Stack gap="sm">
-          <Group>
+          <Group grow>
             <Button
               size="md"
               leftSection={<IconFileText size={18} />}
@@ -52,7 +47,7 @@ export function ExportPanel({ check, result, busy, canMake, onMake }: Props) {
               disabled={!canMake}
               onClick={onMake}
             >
-              {busy ? "만드는 중이에요…" : "한글 파일 만들기"}
+              {busy ? '만드는 중이에요…' : '한글 파일 만들기'}
             </Button>
           </Group>
 
@@ -96,7 +91,7 @@ export function ExportPanel({ check, result, busy, canMake, onMake }: Props) {
 
               {info.length > 0 && (
                 <details>
-                  <Text component="summary" size="sm" c="dimmed" style={{ cursor: "pointer" }}>
+                  <Text component="summary" size="sm" c="dimmed" style={{ cursor: 'pointer' }}>
                     참고 {info.length}건
                   </Text>
                   <List size="sm" c="dimmed" mt={4}>

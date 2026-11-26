@@ -82,13 +82,15 @@ export const notify = {
     );
   },
   // 되돌릴 수 있는 동작 뒤에 띄우는 알림. '되돌리기'를 누르면 onUndo를 부른다.
-  undo: (message: string, onUndo: () => void): string => {
+  // persist면 직접 닫을 때까지 둔다(이 알림을 놓치면 되돌릴 방법이 없을 때)
+  undo: (message: string, onUndo: () => void, opts: Pick<Options, 'persist'> = {}): string => {
     const id = `undo-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     notifications.show({
       id,
       color: 'teal',
       icon: <IconCheck size={18} />,
-      autoClose: 8000,
+      autoClose: opts.persist ? false : 8000,
+      withCloseButton: true,
       message: (
         <Group justify="space-between" align="center" wrap="nowrap" gap="sm">
           <Text size="sm">{message}</Text>

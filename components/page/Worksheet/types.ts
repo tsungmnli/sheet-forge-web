@@ -11,11 +11,25 @@ export interface WsItem {
   preview_tex?: string;
 }
 
+export type NumberMode = 'sequence' | 'source';
+
 export interface PresetShape {
   paper: { kind: string; width_mm: number; height_mm: number };
-  columns: { count: number; gap_mm: number | null };
+  // divider: 단 사이 세로 구분선(2단 이상일 때만 그려짐)
+  columns: { count: number; gap_mm: number | null; divider?: boolean };
+  // enabled: 쪽 아래 가운데에 "- 1 -" 모양으로 넣음
+  page_number?: { enabled?: boolean };
+  // blank_lines: 문제 사이 빈 줄 수(풀이 공간)
+  spacing?: { blank_lines?: number; [key: string]: unknown };
+  // sequence: 담은 순서대로 새로 매김 / source: 시험지의 원래 번호 그대로
+  numbering?: { mode?: NumberMode; [key: string]: unknown };
   // 수식 크기가 없는 옛 문제지는 서버가 글자 크기를 따라 처리한다
-  typography?: { font_size_pt: number; equation_size_pt?: number; [key: string]: unknown };
+  typography?: {
+    font_name?: string;
+    font_size_pt: number;
+    equation_size_pt?: number;
+    [key: string]: unknown;
+  };
   [key: string]: unknown;
 }
 
@@ -54,6 +68,18 @@ export const DEFAULT_FONT_PT = 11.5;
 export const DEFAULT_EQUATION_PT = 11;
 export const FONT_PT_MIN = 6;
 export const FONT_PT_MAX = 20;
+
+// 일반 글자 글꼴. 새 문제지의 기본값은 서버(ExportPreset)와 같게 둔다.
+export const DEFAULT_FONT_NAME = '함초롬바탕';
+export const FONT_NAMES = [DEFAULT_FONT_NAME, '함초롬돋움', '맑은 고딕'];
+
+// 풀이 공간(문제 사이 빈 줄 수). 새 문제지의 기본값은 서버(ExportPreset)와 같게 둔다.
+export const DEFAULT_BLANK_LINES = 1;
+export const SOLVE_SPACES = [
+  { lines: 1, label: '좁게' },
+  { lines: 4, label: '보통' },
+  { lines: 8, label: '넓게' },
+];
 
 export const PAPERS = [
   { kind: 'A4', width_mm: 210, height_mm: 297 },

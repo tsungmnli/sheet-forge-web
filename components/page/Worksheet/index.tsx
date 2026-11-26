@@ -67,33 +67,42 @@ export function WorksheetClient({ worksheetId }: { worksheetId: string }) {
         </Text>
       </div>
 
-      <ItemList
-        items={ws.items}
-        saving={h.saving}
-        canUndo={h.undoIds !== null}
-        undoMessage={h.undoMessage}
-        onReorder={h.reorder}
-        onSortBySourceNumber={h.sortBySourceNumber}
-        onRemove={h.removeAt}
-        onUndo={h.undoRemove}
-      />
-
-      {ws.preset && (
-        <PresetPanel
-          preset={ws.preset}
-          layout={ws.layout}
+      {/* 넓은 화면: 왼쪽은 문제 목록, 오른쪽은 스크롤해도 따라오는 만들기·모양 */}
+      <div className={classes.columns}>
+        <ItemList
+          items={ws.items}
           saving={h.saving}
-          onChange={h.changePreset}
+          numberMode={ws.preset ? (ws.preset.numbering?.mode ?? 'sequence') : null}
+          onNumberModeChange={(mode) =>
+            h.changePreset((p) => ({ ...p, numbering: { ...p.numbering, mode } }))
+          }
+          onReorder={h.reorder}
+          onSortBySourceNumber={h.sortBySourceNumber}
+          onRemove={h.removeAt}
         />
-      )}
 
-      <ExportPanel
-        check={h.check}
-        result={h.result}
-        busy={h.busy}
-        canMake={canMake}
-        onMake={h.makeFile}
-      />
+        <Stack gap="md" className={classes.side}>
+          <ExportPanel
+            check={h.check}
+            result={h.result}
+            busy={h.busy}
+            canMake={canMake}
+            onMake={h.makeFile}
+          />
+          {ws.preset && (
+            <PresetPanel
+              preset={ws.preset}
+              layout={ws.layout}
+              saving={h.saving}
+              onChange={h.changePreset}
+              hasDefault={h.hasDefault}
+              defaultBusy={h.defaultBusy}
+              onSaveDefault={h.saveDefaultPreset}
+              onClearDefault={h.clearDefaultPreset}
+            />
+          )}
+        </Stack>
+      </div>
     </Stack>
   );
 }

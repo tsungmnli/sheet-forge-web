@@ -1,3 +1,32 @@
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--mantine-spacing-md);
+  align-items: start;
+}
+
+.side {
+  min-width: 0;
+}
+
+@media (min-width: 62em) {
+  .columns {
+    grid-template-columns: minmax(0, 1fr) 21rem;
+  }
+
+  .side {
+    position: sticky;
+    top: calc(var(--app-shell-header-height, 60px) + var(--mantine-spacing-md));
+    max-height: calc(100dvh - var(--app-shell-header-height, 60px) - 2 * var(--mantine-spacing-md));
+    overflow-y: auto;
+  }
+
+  /* 높이가 정해진 세로 칸에서 상자가 찌그러지지 않고 스크롤되게 한다 */
+  .side > * {
+    flex-shrink: 0;
+  }
+}
+
 .title {
   font-size: var(--mantine-font-size-xl);
   font-weight: 600;
@@ -16,7 +45,7 @@
 }
 
 .row {
-  padding: var(--mantine-spacing-md) 0;
+  padding: var(--mantine-spacing-sm) 0;
 }
 
 .row + .row {
@@ -47,7 +76,7 @@
 }
 
 .number {
-  width: 2rem;
+  min-width: 2rem;
   flex-shrink: 0;
   text-align: center;
   font-weight: 600;

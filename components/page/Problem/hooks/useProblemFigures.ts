@@ -31,16 +31,19 @@ export function useProblemFigures(problemId: string, data: ProblemData) {
   // 다른 문제로 넘어가거나 화면을 나가면 알림을 거둔다(되살리기가 엉뚱한 문제에 적용되는 것을 막는다)
   useEffect(() => dismissUndo, [problemId, dismissUndo]);
 
-  // --- 그림 정리(세기 고르기): 즉시 반영 ---
+  // --- 그림 정리(세기·색 처리 고르기): 즉시 반영. color를 안 보내면 서버가 지금 값을 그대로 둔다 ---
   const pickFigureLevel = useCallback(
-    async (fid: string, level: number) => {
+    async (fid: string, level: number, color?: 'keep' | 'erase', hues?: number[]) => {
       if (!problem || !etag) return;
       setFigureBusy(true);
-      const res = await apiFetch<ProblemOut>(`/problems/${problem.id}/figures/${fid}/clean-level`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'If-Match': etag },
-        body: JSON.stringify({ level }),
-      });
+      const res = await apiFetch<ProblemOut>(
+        `/problems/${problem.id}/figures/${fid}/${hues ? 'erase-colors' : 'clean-level'}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'If-Match': etag },
+          body: JSON.stringify(hues ? { level, hues } : color ? { level, color } : { level }),
+        },
+      );
       setFigureBusy(false);
       if (res.status === 409) {
         if (res.error?.code === 'PROBLEM_CONFIRMED') {
@@ -259,6 +262,28 @@ export function useProblemFigures(problemId: string, data: ProblemData) {
     [problem, updateEtag, setProblem, setBlockers, dismissUndo],
   );
 
+  // --- 지운 그림을 목록에서 완전히 없애기(되살릴 수 없다) ---
+  const discardRemovedFigure = useCallback(
+    async (fid: string) => {
+      if (!problem) return;
+      setFigureBusy(true);
+      const res = await apiFetch<ProblemOut>(`/problems/${problem.id}/removed-figures/${fid}`, {
+        method: 'DELETE',
+      });
+      setFigureBusy(false);
+      if (res.error) {
+        warnFigure(friendlyError(res.error));
+        return;
+      }
+      if (res.data) {
+        updateEtag(res.etag || res.data.version.toString());
+        setProblem(res.data);
+        setBlockers(res.data.checks.blockers);
+      }
+    },
+    [problem, updateEtag, setProblem, setBlockers],
+  );
+
   // --- 그림 삭제 ---
   const deleteFigure = useCallback(
     async (fid: string) => {
@@ -303,6 +328,7 @@ export function useProblemFigures(problemId: string, data: ProblemData) {
     editFigureRegion,
     addFigure,
     restoreFigure,
+    discardRemovedFigure,
     deleteFigure,
   };
 }

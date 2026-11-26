@@ -293,6 +293,10 @@ export interface FigureOut {
   bbox?: number[] | null;
   levels?: Record<string, string | null> | null;
   clean_level?: number | null;
+  clean_hues?: number[] | null; // pick일 때 지운 색의 색상 값
+  pick_ref?: string | null; // pick일 때 고른 색을 지운 정리본
+  palette?: { hue: number; rgb: string; share: number }[] | null; // 그림의 주요 색 견본
+  clean_color?: 'keep' | 'erase' | 'pick' | null; // 색 처리: keep = 색 유지, erase = 색 낙서 지움(없으면 erase, 옛 그림)
   erased?: boolean; // 낙서 지우개로 고친 그림이면 true(clean_ref가 지운 결과)
   state?: 'processing' | 'ready' | 'failed';
 }

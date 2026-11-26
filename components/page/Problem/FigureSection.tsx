@@ -1,9 +1,10 @@
 'use client';
 
-import { Group, Paper, Stack, Text, UnstyledButton } from '@mantine/core';
-import { IconRotate } from '@tabler/icons-react';
+import { ActionIcon, Group, Paper, Stack, Text, UnstyledButton } from '@mantine/core';
+import { IconRotate, IconX } from '@tabler/icons-react';
 
 import { AddFigureButton, FigureEditor, displayFigureUrl } from '@/components/common/FigureEditor';
+import { confirmDialog } from '@/lib/confirm';
 import type { FigureOut, RemovedFigureOut } from '@/lib/types';
 
 import classes from './Problem.module.css';
@@ -30,6 +31,7 @@ export function FigureSection({ figures, removedFigures, cropUrl, locked, figs }
     editFigureRegion,
     addFigure,
     restoreFigure,
+    discardRemovedFigure,
     deleteFigure,
   } = figs;
   const disabled = locked || figureBusy;
@@ -47,7 +49,8 @@ export function FigureSection({ figures, removedFigures, cropUrl, locked, figs }
             fig={fig}
             cropUrl={cropUrl}
             disabled={disabled}
-            onPickLevel={(level) => pickFigureLevel(fig.id, level)}
+            onPickLevel={(level, color) => pickFigureLevel(fig.id, level, color)}
+            onPickColors={(level, hues) => pickFigureLevel(fig.id, level, undefined, hues)}
             onRegionEdit={(bbox) => editFigureRegion(fig.id, bbox)}
             onDelete={() => deleteFigure(fig.id)}
             onSaveErased={(blob) => saveFigureErased(fig.id, blob)}
@@ -71,22 +74,41 @@ export function FigureSection({ figures, removedFigures, cropUrl, locked, figs }
             {removedFigures.map((f) => {
               const url = displayFigureUrl(f);
               return (
-                <UnstyledButton key={f.id} disabled={disabled} onClick={() => restoreFigure(f.id)}>
-                  <Paper withBorder radius="md" py={6} pl={6} pr="sm">
-                    <Group gap="xs" wrap="nowrap" opacity={disabled ? 0.5 : 1}>
-                      {url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={url} alt="" className={classes.removedThumb} />
-                      ) : (
-                        <span className={classes.removedThumb} />
-                      )}
-                      <IconRotate size={14} />
-                      <Text size="xs" c="dimmed">
-                        되살리기
-                      </Text>
-                    </Group>
-                  </Paper>
-                </UnstyledButton>
+                <Paper key={f.id} withBorder radius="md" py={6} pl={6} pr={4}>
+                  <Group gap={6} wrap="nowrap" opacity={disabled ? 0.5 : 1}>
+                    <UnstyledButton disabled={disabled} onClick={() => restoreFigure(f.id)}>
+                      <Group gap="xs" wrap="nowrap">
+                        {url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={url} alt="" className={classes.removedThumb} />
+                        ) : (
+                          <span className={classes.removedThumb} />
+                        )}
+                        <IconRotate size={14} />
+                        <Text size="xs" c="dimmed">
+                          되살리기
+                        </Text>
+                      </Group>
+                    </UnstyledButton>
+                    <ActionIcon
+                      variant="subtle"
+                      color="gray"
+                      size="sm"
+                      aria-label="목록에서 완전히 지우기"
+                      disabled={disabled}
+                      onClick={async () => {
+                        const yes = await confirmDialog({
+                          message: '이 그림을 목록에서 완전히 지울까요? 다시 되살릴 수 없어요.',
+                          confirmLabel: '지우기',
+                          danger: true,
+                        });
+                        if (yes) discardRemovedFigure(f.id);
+                      }}
+                    >
+                      <IconX size={14} />
+                    </ActionIcon>
+                  </Group>
+                </Paper>
               );
             })}
           </Group>

@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { ActionIcon, Center, Group, Paper, Text } from "@mantine/core";
-import { IconRotate, IconZoomIn, IconZoomOut } from "@tabler/icons-react";
+import { ActionIcon, Center, Group, Paper, Text } from '@mantine/core';
+import { IconRotate, IconZoomIn, IconZoomOut } from '@tabler/icons-react';
 
-import classes from "./Problem.module.css";
-import type { useProblemView } from "./hooks/useProblemView";
+import classes from './Problem.module.css';
+import type { useProblemView } from './hooks/useProblemView';
 
 type View = ReturnType<typeof useProblemView>;
 
@@ -15,16 +15,15 @@ interface Props {
 
 // 좌측: 원본 크롭 (확대/축소, 확대 상태에서 드래그로 이동)
 export function CropPane({ cropUrl, view }: Props) {
-  const { zoom, setZoom, pan, setPan, isPanning, setIsPanning, panStartRef } =
-    view;
+  const { zoom, setZoom, pan, setPan, isPanning, setIsPanning, panStartRef } = view;
 
   return (
-    <Paper withBorder radius="md" style={{ overflow: "hidden" }}>
+    <Paper withBorder radius="md" className={classes.cropPane} style={{ overflow: 'hidden' }}>
       <Group
         justify="space-between"
         px="md"
         py={6}
-        style={{ borderBottom: "1px solid var(--mantine-color-default-border)" }}
+        style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
       >
         <Text size="sm" fw={600} c="dimmed">
           원본
@@ -91,7 +90,7 @@ export function CropPane({ cropUrl, view }: Props) {
             className={classes.cropImage}
             style={{
               transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
-              cursor: zoom > 1 ? (isPanning ? "grabbing" : "grab") : "default",
+              cursor: zoom > 1 ? (isPanning ? 'grabbing' : 'grab') : 'default',
             }}
             draggable={false}
           />

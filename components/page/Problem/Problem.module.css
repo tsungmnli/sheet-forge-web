@@ -7,6 +7,26 @@
   background: var(--mantine-color-dark-8);
 }
 
+/* 두 칸으로 나뉘는 넓은 화면(lg 이상)에서는 원본을 헤더 아래에 붙여 둔다.
+   오른쪽을 스크롤해도 원본이 따라와서, 아래를 보다가 다시 올라갈 일이 없다.
+   한 칸으로 쌓이는 좁은 화면에서는 편집 내용을 가리므로 붙이지 않는다. */
+.cropPane {
+  align-self: start;
+}
+
+@media (min-width: 75em) {
+  .cropPane {
+    position: sticky;
+    /* 헤더(60px) + 여백 */
+    top: calc(60px + var(--mantine-spacing-md));
+  }
+
+  /* 붙어 있는 동안 남는 높이를 원본에 쓴다(헤더·원본 제목줄·하단 고정 바 제외) */
+  .cropViewer {
+    height: clamp(320px, calc(100dvh - 230px), 900px);
+  }
+}
+
 .cropImage {
   position: absolute;
   inset: 0;

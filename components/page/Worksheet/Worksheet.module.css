@@ -5,24 +5,49 @@
   align-items: start;
 }
 
+/* 하단 고정 바에 마지막 줄이 가리지 않게 바 높이만큼 비워 둔다(아이폰 홈 표시줄 영역 포함) */
+.page {
+  padding-bottom: calc(72px + env(safe-area-inset-bottom));
+}
+
+/* 오른쪽 열은 sticky 없이 페이지와 함께 스크롤한다.
+   만들기 버튼만 따라오게 하면 모양 패널이 그 밑으로 들어가 가려지고(z-index 겹침 포함),
+   열 전체를 붙이면 화면보다 길 때 안쪽 스크롤이 생겨 잘린다. 그래서 버튼은 하단 바로 뺐다. */
 .side {
   min-width: 0;
+}
+
+/* 하단 바 바로가기로 스크롤했을 때 앱 헤더(60px)에 가리지 않게 */
+.anchor {
+  scroll-margin-top: calc(60px + var(--mantine-spacing-md));
+}
+
+.bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* 문제 화면 하단 바와 같은 층. 수식 키보드(300)·알림보다는 아래 */
+  z-index: 200;
+  border-top: 1px solid var(--mantine-color-default-border);
+  background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
+  padding-block: var(--mantine-spacing-sm)
+    calc(var(--mantine-spacing-sm) + env(safe-area-inset-bottom));
+}
+
+.barStatus {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 좁은 화면에서는 상태 글이 두 줄까지 접히고 버튼은 줄어들지 않는다 */
+.barButton {
+  flex-shrink: 0;
 }
 
 @media (min-width: 62em) {
   .columns {
     grid-template-columns: minmax(0, 1fr) 21rem;
-  }
-
-  /* 오른쪽 열 전체를 헤더 아래에 붙인다. 화면보다 길면 이 열 안에서만 스크롤한다.
-     예전처럼 만들기 패널만 sticky로 두면 (1) 부모(.side)가 내용 높이뿐이라 모양 패널 높이만큼만
-     따라오다 놓치고, (2) 따라오는 동안 모양 패널이 그 밑으로 들어가 가려지며,
-     (3) SegmentedControl·Switch의 z-index가 sticky의 z-index: 1보다 높아 위로 비쳐 보였다. */
-  .side {
-    position: sticky;
-    top: calc(var(--app-shell-header-height, 60px) + var(--mantine-spacing-md));
-    max-height: calc(100dvh - var(--app-shell-header-height, 60px) - 2 * var(--mantine-spacing-md));
-    overflow-y: auto;
   }
 }
 

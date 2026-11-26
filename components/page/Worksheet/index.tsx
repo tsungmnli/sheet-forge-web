@@ -5,6 +5,7 @@ import { Button, Group, Stack, Text, TextInput } from '@mantine/core';
 import { IconAlertCircle, IconArrowLeft } from '@tabler/icons-react';
 
 import { PageLoader } from '@/components/common/PageLoader';
+import { ExportBar } from './ExportBar';
 import { ExportPanel } from './ExportPanel';
 import { ItemList } from './ItemList';
 import { PresetPanel } from './PresetPanel';
@@ -31,7 +32,7 @@ export function WorksheetClient({ worksheetId }: { worksheetId: string }) {
   const canMake = !h.busy && ws.items.length > 0 && h.check?.ready !== false;
 
   return (
-    <Stack gap="md">
+    <Stack gap="md" className={classes.page}>
       <Group>
         <Button
           component={Link}
@@ -67,7 +68,7 @@ export function WorksheetClient({ worksheetId }: { worksheetId: string }) {
         </Text>
       </div>
 
-      {/* 넓은 화면: 왼쪽은 문제 목록, 오른쪽은 스크롤해도 따라오는 만들기·모양 */}
+      {/* 넓은 화면: 왼쪽은 문제 목록, 오른쪽은 점검·결과·모양. 좁은 화면에서는 위아래로 쌓인다 */}
       <div className={classes.columns}>
         <ItemList
           items={ws.items}
@@ -82,13 +83,7 @@ export function WorksheetClient({ worksheetId }: { worksheetId: string }) {
         />
 
         <Stack gap="md" className={classes.side}>
-          <ExportPanel
-            check={h.check}
-            result={h.result}
-            busy={h.busy}
-            canMake={canMake}
-            onMake={h.makeFile}
-          />
+          <ExportPanel check={h.check} result={h.result} />
           {ws.preset && (
             <PresetPanel
               preset={ws.preset}
@@ -103,6 +98,15 @@ export function WorksheetClient({ worksheetId }: { worksheetId: string }) {
           )}
         </Stack>
       </div>
+
+      <ExportBar
+        itemCount={ws.items.length}
+        check={h.check}
+        result={h.result}
+        busy={h.busy}
+        canMake={canMake}
+        onMake={h.makeFile}
+      />
     </Stack>
   );
 }

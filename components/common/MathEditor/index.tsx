@@ -81,6 +81,13 @@ function cleanLatex(s: string): string {
   return s.replace(/\\placeholder(\[[^\]]*\])?\{([^}]*)\}/g, '$2').trim();
 }
 
+// mathlive의 focus()는 옵션(preventScroll)을 받지 않으므로, 포커스 전후의 스크롤 위치를 직접 되돌린다.
+function focusWithoutScroll(mf: MathfieldElement) {
+  const { scrollX, scrollY } = window;
+  mf.focus();
+  window.scrollTo({ left: scrollX, top: scrollY, behavior: 'instant' });
+}
+
 interface MathEditorProps {
   initialLatex: string;
   // 편집기가 붙는 자리: 고치는 중인 수식을 그대로 보여 준다.
@@ -166,7 +173,6 @@ export function MathEditor({ initialLatex, anchor, onSave, onCancel }: MathEdito
       host.appendChild(mf);
       fieldRef.current = mf;
       // 드롭다운은 위치 계산 전까지 문서 (0,0)에 있다. 자리를 잡은 뒤에 포커스한다(최대 30프레임 대기).
-      // mathlive가 preventScroll을 무시할 수 있어, 포커스 전후의 스크롤 위치도 직접 되돌린다.
       const field = mf;
       const dropdown = host.parentElement;
       let frames = 0;
@@ -177,9 +183,7 @@ export function MathEditor({ initialLatex, anchor, onSave, onCancel }: MathEdito
           requestAnimationFrame(focusWhenPlaced);
           return;
         }
-        const { scrollX, scrollY } = window;
-        field.focus({ preventScroll: true });
-        window.scrollTo({ left: scrollX, top: scrollY, behavior: 'instant' });
+        focusWithoutScroll(field);
       };
       focusWhenPlaced();
 
@@ -214,7 +218,7 @@ export function MathEditor({ initialLatex, anchor, onSave, onCancel }: MathEdito
     const mf = fieldRef.current;
     if (!mf) return;
     mf.insert(snippet, { format: 'latex' });
-    mf.focus({ preventScroll: true });
+    focusWithoutScroll(mf);
   };
 
   const save = () => onSave(cleanLatex(fieldRef.current?.value ?? ''));

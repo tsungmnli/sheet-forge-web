@@ -74,9 +74,6 @@ export function ItemList({
               }}
             />
           )}
-          <Text size="xs" c="dimmed">
-            화면과 한글 파일에 똑같이 적용돼요.
-          </Text>
           {/* 정렬 기준인 원래 번호가 화면에 보일 때만 정렬 단추를 보여 준다 */}
           {numberMode === 'source' && items.length > 1 && (
             <Tooltip label="번호가 작은 문제부터 늘어놓아요. 번호가 없는 문제는 맨 뒤로 가요.">

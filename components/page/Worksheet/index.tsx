@@ -110,6 +110,7 @@ export function WorksheetClient({ worksheetId }: { worksheetId: string }) {
             <PresetPanel
               preset={ws.preset}
               layout={ws.layout}
+              hasSubtitle={Boolean(ws.subtitle?.trim())}
               saving={h.saving}
               onChange={h.changePreset}
               hasDefault={h.hasDefault}

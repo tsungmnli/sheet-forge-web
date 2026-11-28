@@ -59,8 +59,14 @@ export interface PresetShape {
   // (전체 쪽수는 한글이 자동으로 센다)
   page_number?: { enabled?: boolean; style?: PageNumberStyle };
   // enabled: 첫 쪽 맨 위에 제목(문제지 제목)과 부제를 담은 상자를 넣음. 꺼져 있는 게 기본
-  // big_font: 큰 줄(부제, 없으면 제목) 글꼴 / small_font: 작은 줄(제목) 글꼴. 크기는 32pt·20pt로 고정
-  title_box?: { enabled?: boolean; big_font?: string; small_font?: string };
+  // big_*: 둘째 줄(부제, 없으면 제목)의 글꼴·크기 / small_*: 첫 줄(제목)의 글꼴·크기
+  title_box?: {
+    enabled?: boolean;
+    big_font?: string;
+    small_font?: string;
+    big_pt?: number;
+    small_pt?: number;
+  };
   // text: 머리말 상자에 찍을 짧은 글자(예: '중1'). 비어 있으면 넣지 않는다. 제목 상자가 들어간 첫 쪽에서는 숨긴다
   header_mark?: { text?: string; position?: HeaderMarkPosition };
   // 출처 글자는 시험지마다 따로 적는다(시험지 화면의 '출처' 칸). 비어 있는 시험지의 문제에는 찍지 않는다
@@ -106,6 +112,8 @@ export interface WsLayout {
   // 배치 미리보기용(문제지 화면에서만 준다). 제목 상자 높이는 추정값이고, 제목이 비면 상자를 넣지 않아 null
   col_gap_mm?: number;
   title_box_h_mm?: number | null;
+  // 제목 상자의 첫 줄·둘째 줄이 한 줄을 넘을 것으로 추정되는지
+  title_box_wraps?: { first: boolean; second: boolean } | null;
   // 표식 상자 크기, 머리말 맨 위에서 상자 윗변(top_mm)·표 아래 선(line_mm)까지. 표식 글자가 없으면 null
   header_mark?: { w_mm: number; h_mm: number; top_mm: number; line_mm: number } | null;
   // 쪽 번호 상자(대각선 칸) 크기, 꼬리말 맨 아래에서 상자 아랫변까지(bottom_mm, 근사값). 상자 모양이 아니면 null
@@ -151,8 +159,14 @@ export const TITLE_FONT_NAMES = [
   DEFAULT_TITLE_SMALL_FONT,
   '함초롬바탕',
   '함초롬돋움',
+  '맑은 고딕',
 ];
 export const FONT_NAME_MAX_LEN = 100;
+// 제목 상자 글자 크기(pt). 기본값과 범위는 서버(ExportPreset.title_box)와 같게 둔다
+export const DEFAULT_TITLE_BIG_PT = 32;
+export const DEFAULT_TITLE_SMALL_PT = 20;
+export const TITLE_PT_MIN = 8;
+export const TITLE_PT_MAX = 48;
 
 // 풀이 공간(문제 사이 빈 줄 수). 새 문제지의 기본값은 서버(ExportPreset)와 같게 둔다.
 export const DEFAULT_BLANK_LINES = 1;

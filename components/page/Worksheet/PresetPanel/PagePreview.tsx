@@ -5,6 +5,7 @@ import { Group, Stack, Text } from '@mantine/core';
 import { DEFAULT_MARGINS, type WsLayout } from '../types';
 import type { GroupKey, PresetView } from './groups';
 import classes from '../Worksheet.module.css';
+import { InfoTip } from './InfoTip';
 
 // 배치 스케치: 1쪽과 2쪽을 실제 비율로 나란히 그린다. 수치는 서버가 내려 준 값(layout)만 쓰고,
 // 웹에서 따로 계산하지 않는다. 문항 내용과 글꼴은 그리지 않는다(배치 확인용).
@@ -282,27 +283,16 @@ function Page({ n, view, layout, focus }: Props & { n: 1 | 2 }) {
   );
 }
 
-// 그림 아래 안내 글(여백을 올렸다, 제목 높이는 추정 등)
+// 그림 아래 안내 글(결과가 달라지는 일만). 배치 확인용이라는 설명은 미리보기 제목 옆 ⓘ에 있다
 function PreviewNotes({ view, layout }: Pick<Props, 'view' | 'layout'>) {
+  // 여백을 올려 만드는 안내는 '용지와 여백'의 경고(MarginWarnings) 한 곳에만 둔다. 여기서는 빨간 점선만 그린다.
+  // 제목 상자 높이가 추정이라는 것은 그림 안의 '제목 (추정)' 글자가 알려 준다
   const notes: { text: string; warn?: boolean }[] = [];
-  const mm = (v: number) => `${Math.round(v * 10) / 10}mm`;
-  if (view.markText && layout.header_raised_from_mm != null && layout.margins_mm) {
-    notes.push({
-      text: `머리말 여백을 ${mm(layout.header_raised_from_mm)}에서 ${mm(layout.margins_mm.header)}로 올려서 만들어요(빨간 점선이 입력한 값).`,
-      warn: true,
-    });
-  }
-  if (layout.footer_raised_from_mm != null && layout.margins_mm) {
-    notes.push({
-      text: `꼬리말 여백을 ${mm(layout.footer_raised_from_mm)}에서 ${mm(layout.margins_mm.footer)}로 올려서 만들어요(빨간 점선이 입력한 값).`,
-      warn: true,
-    });
-  }
   if (view.titleBoxOn && layout.title_box_h_mm == null) {
     notes.push({ text: '문제지 제목이 비어 있어 제목 상자는 넣지 않아요.', warn: true });
-  } else if (view.titleBoxOn) {
-    notes.push({ text: '제목 상자 높이는 제목 길이로 추정한 값이에요.' });
   }
+
+  if (notes.length === 0) return null;
 
   return (
     <Stack gap={4}>
@@ -311,10 +301,22 @@ function PreviewNotes({ view, layout }: Pick<Props, 'view' | 'layout'>) {
           {note.text}
         </Text>
       ))}
-      <Text size="xs" c="dimmed">
-        글꼴 {view.fontName} · 배치 확인용이며 실제 한글 화면과 다를 수 있어요.
-      </Text>
     </Stack>
+  );
+}
+
+// 미리보기 제목. 넓은 화면의 카드와 좁은 화면의 하단 시트가 같이 쓴다
+export function PreviewTitle() {
+  return (
+    <Group gap={4} wrap="nowrap">
+      <Text size="xs" fw={600}>
+        배치 미리보기
+      </Text>
+      <InfoTip label="배치 미리보기">
+        배치 확인용이에요. 한글에서는 쪽 나눔·줄바꿈이 조금 다를 수 있고, 고른 글꼴이 없는
+        컴퓨터에서는 다른 글꼴로 보일 수 있어요.
+      </InfoTip>
+    </Group>
   );
 }
 

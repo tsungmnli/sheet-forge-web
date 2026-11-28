@@ -3,7 +3,7 @@
 import { useState, type ComponentType } from 'react';
 import {
   Accordion,
-  Badge,
+  Box,
   Button,
   Drawer,
   Group,
@@ -35,13 +35,15 @@ import {
   type SectionProps,
 } from './sections';
 import { matchMarginPreset } from './margins';
-import { canPreview, PagePreview } from './PagePreview';
+import { canPreview, PagePreview, PreviewTitle } from './PagePreview';
+import { InfoTip } from './InfoTip';
 import classes from '../Worksheet.module.css';
 import { fetchMyDefaultPreset, usePresetDefaults } from './usePresetDefaults';
 
 interface Props {
   preset: PresetShape;
   layout: Worksheet['layout'];
+  hasSubtitle: boolean;
   saving: boolean;
   onChange: (change: (p: PresetShape) => PresetShape) => void;
   // 내 기본 모양: 새 문제지가 이 모양으로 시작한다
@@ -61,6 +63,7 @@ const SECTION: Record<GroupKey, ComponentType<SectionProps>> = {
 export function PresetPanel({
   preset,
   layout,
+  hasSubtitle,
   saving,
   onChange,
   hasDefault,
@@ -163,16 +166,16 @@ export function PresetPanel({
                 onClose={() => setSheetOpen(false)}
                 position="bottom"
                 size="auto"
-                title="배치 미리보기"
+                title={<PreviewTitle />}
               >
                 <PagePreview view={view} layout={layout} focus={focus} />
               </Drawer>
             </>
           ) : (
             <div className={classes.previewCard}>
-              <Text size="xs" fw={600} mb={6}>
-                배치 미리보기
-              </Text>
+              <Box mb={6}>
+                <PreviewTitle />
+              </Box>
               <PagePreview view={view} layout={layout} focus={focus} />
             </div>
           ))}
@@ -189,13 +192,8 @@ export function PresetPanel({
                     <Text size="sm" fw={600}>
                       {GROUP_TITLE[key]}
                     </Text>
-                    {changed && (
-                      <Badge size="xs" variant="light">
-                        변경됨
-                      </Badge>
-                    )}
                   </Group>
-                  <Text size="xs" c="dimmed" lineClamp={1}>
+                  <Text size="xs" c="dimmed" lineClamp={2}>
                     {summarize(key, view, marginLabel)}
                   </Text>
                 </Accordion.Control>
@@ -207,6 +205,7 @@ export function PresetPanel({
                       onChange={onChange}
                       layout={layout}
                       marginPresets={marginPresets}
+                      hasSubtitle={hasSubtitle}
                     />
                     {/* 버튼 안에 버튼이 들어가지 않게 '기본값으로'는 펼친 안쪽에 둔다 */}
                     {defaults && changed && (
@@ -229,36 +228,31 @@ export function PresetPanel({
           })}
         </Accordion>
 
-        <div>
-          <Group gap="xs">
+        <Group gap="xs">
+          <Button
+            variant="light"
+            size="compact-sm"
+            loading={defaultBusy}
+            disabled={saving}
+            onClick={onSaveDefault}
+          >
+            이 모양을 기본으로
+          </Button>
+          {hasDefault && (
             <Button
-              variant="light"
+              variant="subtle"
+              color="gray"
               size="compact-sm"
-              loading={defaultBusy}
-              disabled={saving}
-              onClick={onSaveDefault}
+              disabled={saving || defaultBusy}
+              onClick={onClearDefault}
             >
-              이 모양을 기본으로
+              기본 모양 해제
             </Button>
-            {hasDefault && (
-              <Button
-                variant="subtle"
-                color="gray"
-                size="compact-sm"
-                disabled={saving || defaultBusy}
-                onClick={onClearDefault}
-              >
-                기본 모양 해제
-              </Button>
-            )}
-          </Group>
-          <Text size="xs" c="dimmed" mt={4}>
+          )}
+          <InfoTip label="기본 모양">
             앞으로 만드는 새 문제지가 이 모양으로 시작해요. 이미 만든 문제지는 바뀌지 않아요.
-          </Text>
-        </div>
-        <Text size="xs" c="dimmed">
-          쪽 나눔과 줄바꿈은 한글에서 조금 다를 수 있어요.
-        </Text>
+          </InfoTip>
+        </Group>
       </Stack>
     </Paper>
   );

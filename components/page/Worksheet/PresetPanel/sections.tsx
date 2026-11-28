@@ -7,6 +7,8 @@ import {
   DEFAULT_FONT_PT,
   FONT_NAMES,
   TITLE_FONT_NAMES,
+  TITLE_PT_MAX,
+  TITLE_PT_MIN,
   PAPERS,
   SOLVE_SPACES,
   type HeaderMarkPosition,
@@ -18,6 +20,7 @@ import {
 } from '../types';
 import classes from '../Worksheet.module.css';
 import type { PresetView } from './groups';
+import { InfoTip } from './InfoTip';
 import { FieldRow, FontNameInput, MarkInput, SizeInput } from './inputs';
 import { MarginEditor, MarginWarnings } from './margins';
 
@@ -27,6 +30,7 @@ export interface SectionProps {
   onChange: (change: (p: PresetShape) => PresetShape) => void;
   layout?: WsLayout | null;
   marginPresets: MarginPreset[];
+  hasSubtitle: boolean;
 }
 
 // 용지와 여백: 용지, 여백, 칸 수, 단 구분선(2단 이상일 때만 보임)
@@ -73,7 +77,6 @@ export function PaperSection({ view, saving, onChange, layout, marginPresets }: 
       {view.columns >= 2 && (
         <Switch
           label="단 구분선"
-          description="단 사이에 세로선을 넣어요."
           checked={view.divider}
           disabled={saving}
           onChange={(e) => {
@@ -86,43 +89,106 @@ export function PaperSection({ view, saving, onChange, layout, marginPresets }: 
   );
 }
 
-// 첫 쪽 제목: 제목 상자 켜기. 글꼴은 상자를 켰을 때만 보인다(크기는 32pt·20pt로 고정)
-export function TitleSection({ view, saving, onChange }: SectionProps) {
-  const setFont = (key: 'big_font' | 'small_font', name: string) =>
-    onChange((p) => ({ ...p, title_box: { ...p.title_box, [key]: name } }));
+// 제목 상자의 한 줄: 글꼴과 크기를 나란히 두고, 결과가 달라지는 안내는 바로 아래에 둔다
+function TitleLine({
+  name,
+  font,
+  pt,
+  notice,
+  saving,
+  onFont,
+  onPt,
+}: {
+  name: string;
+  font: string;
+  pt: number;
+  notice?: string;
+  saving: boolean;
+  onFont: (font: string) => void;
+  onPt: (pt: number) => void;
+}) {
+  return (
+    <div>
+      <Group align="flex-start" gap="xs" wrap="nowrap">
+        <div className={classes.titleFont}>
+          <FontNameInput
+            label={`${name} 글꼴`}
+            value={font}
+            suggestions={TITLE_FONT_NAMES}
+            disabled={saving}
+            onCommit={onFont}
+          />
+        </div>
+        <SizeInput
+          label="크기"
+          value={pt}
+          min={TITLE_PT_MIN}
+          max={TITLE_PT_MAX}
+          width={96}
+          disabled={saving}
+          onCommit={onPt}
+        />
+      </Group>
+      {notice && (
+        <Text size="xs" c="orange.8" mt={4}>
+          {notice}
+        </Text>
+      )}
+    </div>
+  );
+}
+
+// 첫 쪽 제목: 제목 상자 켜기. 글꼴과 크기는 상자를 켰을 때만 보인다
+export function TitleSection({ view, saving, onChange, hasSubtitle, layout }: SectionProps) {
+  const setTitle = (patch: Partial<NonNullable<PresetShape['title_box']>>) =>
+    onChange((p) => ({ ...p, title_box: { ...p.title_box, ...patch } }));
+  const wraps = layout?.title_box_wraps;
+  const wrapNotice = '글이 길어 두 줄 이상으로 넘어갈 수 있어요. 크기를 줄여 보세요.';
   return (
     <Stack gap="md">
-      <Switch
-        label="첫 쪽 제목 상자"
-        description="첫 쪽 맨 위 상자에 문제지 제목(작게)과 그 아래 큰 제목(크게)을 넣어요. 상자는 쪽 폭 전체로 잡히고, 그 아래부터 단이 나뉘어요."
-        checked={view.titleBoxOn}
-        disabled={saving}
-        onChange={(e) => {
-          const enabled = e.currentTarget.checked;
-          onChange((p) => ({ ...p, title_box: { ...p.title_box, enabled } }));
-        }}
-      />
+      {/* ⓘ는 스위치 라벨 밖에 둔다(안에 두면 누를 때 스위치까지 바뀔 수 있다) */}
+      <Group gap={4} wrap="nowrap">
+        <Switch
+          label="첫 쪽 제목 상자"
+          checked={view.titleBoxOn}
+          disabled={saving}
+          onChange={(e) => {
+            const enabled = e.currentTarget.checked;
+            onChange((p) => ({ ...p, title_box: { ...p.title_box, enabled } }));
+          }}
+        />
+        <InfoTip label="첫 쪽 제목 상자">
+          첫 쪽 맨 위 상자의 첫 줄에 문제지 제목, 둘째 줄에 큰 제목을 넣어요. 큰 제목을 비우면
+          문제지 제목이 둘째 줄에 찍혀요. 상자는 쪽 폭 전체로 잡히고, 그 아래부터 단이 나뉘어요.
+        </InfoTip>
+      </Group>
       {view.titleBoxOn && (
         <>
-          <FontNameInput
-            label="첫 줄 글꼴 (작게, 20pt)"
-            description="문제지 제목이 찍히는 줄이에요."
-            value={view.titleSmallFont}
-            suggestions={TITLE_FONT_NAMES}
-            disabled={saving}
-            onCommit={(name) => setFont('small_font', name)}
+          <TitleLine
+            name="첫 줄"
+            font={view.titleSmallFont}
+            pt={view.titleSmallPt}
+            // 큰 제목이 비면 문제지 제목 한 줄만 둘째 줄 설정으로 찍힌다(서버 title_box_spec)
+            notice={
+              !hasSubtitle
+                ? '큰 제목이 비어 있어 첫 줄 설정은 아직 안 쓰여요. 문제지 제목은 둘째 줄 설정으로 찍혀요.'
+                : wraps?.first
+                  ? wrapNotice
+                  : undefined
+            }
+            saving={saving}
+            onFont={(small_font) => setTitle({ small_font })}
+            onPt={(small_pt) => setTitle({ small_pt })}
           />
-          <FontNameInput
-            label="둘째 줄 글꼴 (크게, 32pt)"
-            description="큰 제목이 찍히는 줄이에요. 큰 제목을 비우면 문제지 제목이 이 줄에 찍혀요."
-            value={view.titleBigFont}
-            suggestions={TITLE_FONT_NAMES}
-            disabled={saving}
-            onCommit={(name) => setFont('big_font', name)}
+          <TitleLine
+            name="둘째 줄"
+            font={view.titleBigFont}
+            pt={view.titleBigPt}
+            notice={wraps?.second ? wrapNotice : undefined}
+            saving={saving}
+            onFont={(big_font) => setTitle({ big_font })}
+            onPt={(big_pt) => setTitle({ big_pt })}
           />
-          <Text size="xs" c="dimmed">
-            글꼴이 없는 컴퓨터에서는 한글이 다른 글꼴로 보여 줘요.
-          </Text>
         </>
       )}
     </Stack>
@@ -133,10 +199,7 @@ export function TitleSection({ view, saving, onChange }: SectionProps) {
 export function HeaderFooterSection({ view, saving, onChange, layout }: SectionProps) {
   return (
     <Stack gap="md">
-      <FieldRow
-        label="쪽 번호"
-        description="쪽 아래 가운데에 넣어요. 전체 쪽수는 한글이 알아서 세요."
-      >
+      <FieldRow label="쪽 번호" info="쪽 아래 가운데에 넣어요. 전체 쪽수는 한글이 알아서 세요.">
         <SegmentedControl
           aria-label="쪽 번호 모양"
           fullWidth
@@ -163,13 +226,13 @@ export function HeaderFooterSection({ view, saving, onChange, layout }: SectionP
       </FieldRow>
       <FieldRow
         label="머리 표식"
-        description={
-          <>
-            둘째 쪽부터 머리말에 작은 상자로 찍어요(예: &apos;중1&apos;). 비워 두면 넣지 않아요.
-            {view.titleBoxOn
-              ? ' 첫 쪽은 제목 상자가 있어서 찍지 않아요.'
-              : ' 첫 쪽 제목 상자를 끄면 첫 쪽에도 찍어요.'}
-          </>
+        info="머리말에 작은 상자로 찍어요(예: '중1'). 비워 두면 넣지 않아요. 첫 쪽 제목 상자가 들어가면 둘째 쪽부터, 없으면 첫 쪽부터 찍어요."
+        // 표식을 적었는데 첫 쪽에 안 보이면 놀랄 수 있어 이 경우만 글로 보여 준다.
+        // 제목이 비면 상자가 빠지므로(title_box_h_mm이 null) 그때는 첫 쪽에도 찍힌다
+        notice={
+          view.markText && view.titleBoxOn && layout?.title_box_h_mm != null
+            ? '첫 쪽은 제목 상자가 있어서 찍지 않아요.'
+            : undefined
         }
       >
         <MarkInput
@@ -186,7 +249,7 @@ export function HeaderFooterSection({ view, saving, onChange, layout }: SectionP
       {view.markText && (
         <FieldRow
           label="표식 위치"
-          description="양면 인쇄용은 홀수 쪽은 오른쪽, 짝수 쪽은 왼쪽 바깥에 찍혀요."
+          info="양면 인쇄용은 홀수 쪽은 오른쪽, 짝수 쪽은 왼쪽 바깥에 찍혀요."
         >
           <SegmentedControl
             aria-label="머리 표식 위치"
@@ -233,27 +296,28 @@ export function TextSection({ view, saving, onChange }: SectionProps) {
 
   return (
     <Stack gap="md">
-      <Select
-        label="글꼴"
-        description="수식 글꼴은 바뀌지 않아요."
-        data={fontNames}
-        value={fontName}
-        allowDeselect={false}
-        disabled={saving}
-        onChange={(name) => {
-          if (!name || name === fontName) return;
-          onChange((p) => ({
-            ...p,
-            // 수식 크기가 없는 옛 문제지에서도 두 크기를 함께 보내 지금 모양을 지킨다
-            typography: {
-              ...p.typography,
-              font_name: name,
-              font_size_pt: fontPt,
-              equation_size_pt: eqPt,
-            },
-          }));
-        }}
-      />
+      <FieldRow label="글꼴" info="수식 글꼴은 바뀌지 않아요.">
+        <Select
+          aria-label="글꼴"
+          data={fontNames}
+          value={fontName}
+          allowDeselect={false}
+          disabled={saving}
+          onChange={(name) => {
+            if (!name || name === fontName) return;
+            onChange((p) => ({
+              ...p,
+              // 수식 크기가 없는 옛 문제지에서도 두 크기를 함께 보내 지금 모양을 지킨다
+              typography: {
+                ...p.typography,
+                font_name: name,
+                font_size_pt: fontPt,
+                equation_size_pt: eqPt,
+              },
+            }));
+          }}
+        />
+      </FieldRow>
       <FieldRow label="글자 크기">
         <Group align="flex-end" gap="sm">
           <SizeInput
@@ -281,7 +345,7 @@ export function TextSection({ view, saving, onChange }: SectionProps) {
       </FieldRow>
       <FieldRow
         label="풀이 공간"
-        description="문제 사이에 넣는 빈 줄 수예요. 한 줄은 약 6~7mm이고, 늘릴수록 한 단에 들어가는 문제가 줄어요."
+        info="문제 사이에 넣는 빈 줄 수예요. 한 줄은 약 6~7mm이고, 늘릴수록 한 단에 들어가는 문제가 줄어요."
       >
         <SegmentedControl
           aria-label="풀이 공간"
@@ -298,10 +362,7 @@ export function TextSection({ view, saving, onChange }: SectionProps) {
           }}
         />
       </FieldRow>
-      <FieldRow
-        label="출처"
-        description="시험지 화면에서 적은 출처를 '[대안중 2025기말]'처럼 찍어요."
-      >
+      <FieldRow label="출처" info="시험지 화면에서 적은 출처를 '[대안중 2025기말]'처럼 찍어요.">
         <SegmentedControl
           aria-label="출처 넣는 곳"
           fullWidth

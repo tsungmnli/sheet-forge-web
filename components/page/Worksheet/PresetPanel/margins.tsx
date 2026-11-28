@@ -13,6 +13,7 @@ import {
 } from '../types';
 import classes from '../Worksheet.module.css';
 import { sameMargins, type PresetView } from './groups';
+import { InfoTip } from './InfoTip';
 import { CommitNumberInput } from './inputs';
 
 type OnChange = (change: (p: PresetShape) => PresetShape) => void;
@@ -124,9 +125,14 @@ export function MarginEditor({
   return (
     <Stack gap="xs">
       <Group justify="space-between" align="center" gap="xs">
-        <Text size="sm" fw={500}>
-          여백
-        </Text>
+        <Group gap={4} wrap="nowrap">
+          <Text size="sm" fw={500}>
+            여백
+          </Text>
+          <InfoTip label="여백">
+            칸마다 0~{MARGIN_MM_MAX}mm. 머리말·꼬리말은 머리 표식과 쪽 번호가 들어가는 높이예요.
+          </InfoTip>
+        </Group>
         {marginPresets.length > 0 && (
           <Group gap={4}>
             <Text size="xs" c="dimmed">
@@ -149,9 +155,6 @@ export function MarginEditor({
           </Group>
         )}
       </Group>
-      <Text size="xs" c="dimmed">
-        칸마다 0~{MARGIN_MM_MAX}mm. 머리말·꼬리말은 머리 표식과 쪽 번호가 들어가는 높이예요.
-      </Text>
       <div className={classes.marginGrid}>
         <div className={classes.marginTop}>
           {input('top')}
@@ -167,19 +170,14 @@ export function MarginEditor({
           {input('bottom')}
         </div>
       </div>
-      {layout && (
-        <Text size="sm" c="dimmed">
-          본문 폭 {Math.round(layout.body_w_mm)}mm
-          {view.columns >= 2 ? ` · 한 칸 약 ${Math.round(layout.col_w_mm)}mm` : ''}
-        </Text>
-      )}
       <MarginWarnings view={view} layout={layout} saving={saving} onChange={onChange} />
     </Stack>
   );
 }
 
-// 머리 표식·쪽 번호가 머리말·꼬리말 여백보다 높을 때의 경고와 '맞추기' 버튼.
-// 필요한 높이는 서버가 계산해 준 값만 쓴다. 화면은 값을 몰래 바꾸지 않고, 그대로 만들면 서버가 올려서 만든다
+// 머리 표식·쪽 번호가 머리말·꼬리말 여백보다 높을 때의 경고와 '맞추기' 버튼. 이 안내는 여기 한 곳에만 둔다
+// (미리보기는 빨간 점선만 그린다). 필요한 높이는 서버가 계산해 준 값을 0.1mm 단위로 올림해서 쓴다 —
+// 서버가 실제로 올려 만드는 값과 같아야 '맞추기'를 눌러도 어긋나지 않는다. 화면은 값을 몰래 바꾸지 않는다
 export function MarginWarnings({
   view,
   layout,
@@ -195,10 +193,10 @@ export function MarginWarnings({
   const footerNeed = layout?.footer_need_mm ?? 0;
   const items: { key: MarginKey; text: string; need: number }[] = [];
   if (view.markText && headerNeed > view.margins.header) {
-    items.push({ key: 'header', text: '머리 표식이', need: Math.ceil(headerNeed) });
+    items.push({ key: 'header', text: '머리 표식', need: Math.ceil(headerNeed * 10) / 10 });
   }
   if (view.pageNumber !== 'off' && footerNeed > view.margins.footer) {
-    items.push({ key: 'footer', text: '쪽 번호가', need: Math.ceil(footerNeed) });
+    items.push({ key: 'footer', text: '쪽 번호', need: Math.ceil(footerNeed * 10) / 10 });
   }
   if (items.length === 0) return null;
   return (
@@ -213,8 +211,9 @@ export function MarginWarnings({
         >
           <Stack gap={6}>
             <Text size="xs">
-              {MARGIN_LABEL[it.key]} 여백이 부족해요. {it.text} 들어가려면 약 {it.need}mm가
-              필요해요. 이대로 만들면 {it.need}mm로 올려서 만들어요.
+              {MARGIN_LABEL[it.key]} 여백이 모자라요. {it.text}에 {it.need}mm가 필요해서, 그대로
+              두면
+              {it.need}mm로 만들어요.
             </Text>
             <Group justify="flex-end">
               <Button

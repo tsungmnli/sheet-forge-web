@@ -8,6 +8,8 @@ import {
   DEFAULT_FONT_PT,
   DEFAULT_TITLE_BIG_FONT,
   DEFAULT_TITLE_SMALL_FONT,
+  DEFAULT_TITLE_BIG_PT,
+  DEFAULT_TITLE_SMALL_PT,
   SOLVE_SPACES,
   type HeaderMarkPosition,
   type MarginKey,
@@ -38,6 +40,8 @@ export interface PresetView {
   titleBoxOn: boolean;
   titleBigFont: string;
   titleSmallFont: string;
+  titleBigPt: number;
+  titleSmallPt: number;
   pageNumber: 'off' | PageNumberStyle;
   markText: string;
   markPosition: HeaderMarkPosition;
@@ -74,6 +78,8 @@ export function readPreset(p: PresetShape): PresetView {
     titleBoxOn: Boolean(p.title_box?.enabled),
     titleBigFont: p.title_box?.big_font ?? DEFAULT_TITLE_BIG_FONT,
     titleSmallFont: p.title_box?.small_font ?? DEFAULT_TITLE_SMALL_FONT,
+    titleBigPt: p.title_box?.big_pt ?? DEFAULT_TITLE_BIG_PT,
+    titleSmallPt: p.title_box?.small_pt ?? DEFAULT_TITLE_SMALL_PT,
     // 꺼져 있으면 '없음', 켜져 있는데 양식이 없던 옛 문제지는 '- 1 -'
     pageNumber: p.page_number?.enabled ? (p.page_number.style ?? 'dash') : 'off',
     markText: p.header_mark?.text ?? '',
@@ -98,11 +104,14 @@ export function isChanged(group: GroupKey, v: PresetView, d: PresetView): boolea
         (v.columns >= 2 && v.divider !== d.divider)
       );
     case 'title':
-      // 글꼴은 상자를 켰을 때만 결과에 나타난다
+      // 글꼴·크기는 상자를 켰을 때만 결과에 나타난다
       return (
         v.titleBoxOn !== d.titleBoxOn ||
         (v.titleBoxOn &&
-          (v.titleBigFont !== d.titleBigFont || v.titleSmallFont !== d.titleSmallFont))
+          (v.titleBigFont !== d.titleBigFont ||
+            v.titleSmallFont !== d.titleSmallFont ||
+            v.titleBigPt !== d.titleBigPt ||
+            v.titleSmallPt !== d.titleSmallPt))
       );
     case 'header':
       return (
@@ -140,6 +149,8 @@ export function resetGroup(group: GroupKey, p: PresetShape, d: PresetShape): Pre
           enabled: dv.titleBoxOn,
           big_font: dv.titleBigFont,
           small_font: dv.titleSmallFont,
+          big_pt: dv.titleBigPt,
+          small_pt: dv.titleSmallPt,
         },
       };
     case 'header':
@@ -198,7 +209,10 @@ export function summarize(group: GroupKey, v: PresetView, marginLabel?: string):
         ...(v.columns >= 2 && v.divider ? ['구분선'] : []),
       ].join(' · ');
     case 'title':
-      return v.titleBoxOn ? '제목 상자 넣기' : '제목 상자 없음';
+      // 글꼴 순서는 펼친 안의 입력칸과 같게 첫 줄 / 둘째 줄
+      return v.titleBoxOn
+        ? `제목 상자 · ${v.titleSmallFont} ${v.titleSmallPt}pt / ${v.titleBigFont} ${v.titleBigPt}pt`
+        : '제목 상자 없음';
     case 'header':
       return [
         PAGE_NUMBER_LABEL[v.pageNumber],

@@ -1,28 +1,43 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
-import { Autocomplete, NumberInput, Text, TextInput } from '@mantine/core';
+import {
+  Autocomplete,
+  Group,
+  NumberInput,
+  Text,
+  TextInput,
+  type AutocompleteProps,
+} from '@mantine/core';
+import { IconCheck, IconChevronDown } from '@tabler/icons-react';
 
 import { FONT_NAME_MAX_LEN, FONT_PT_MAX, FONT_PT_MIN, HEADER_MARK_MAX_LEN } from '../types';
+import { InfoTip } from './InfoTip';
 
-// 묶음 안의 한 줄: 라벨, 설명, 입력. 라벨이 입력에 붙어 있는 Switch·Select는 쓰지 않는다
+// 묶음 안의 한 줄: 라벨(필요하면 옆에 ⓘ), 항상 보일 안내, 입력.
+// 안에 두는 입력에는 라벨을 따로 붙이지 않고 aria-label을 준다
 export function FieldRow({
   label,
-  description,
+  info,
+  notice,
   children,
 }: {
   label: string;
-  description?: ReactNode;
+  info?: ReactNode;
+  notice?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <div>
-      <Text size="sm" fw={500} mb={description ? 0 : 6}>
-        {label}
-      </Text>
-      {description && (
+      <Group gap={4} mb={notice ? 0 : 6} wrap="nowrap">
+        <Text size="sm" fw={500}>
+          {label}
+        </Text>
+        {info && <InfoTip label={label}>{info}</InfoTip>}
+      </Group>
+      {notice && (
         <Text size="xs" c="dimmed" mb={4}>
-          {description}
+          {notice}
         </Text>
       )}
       {children}
@@ -104,11 +119,17 @@ export function CommitNumberInput({
 export function SizeInput({
   label,
   value,
+  min = FONT_PT_MIN,
+  max = FONT_PT_MAX,
+  width = 130,
   disabled,
   onCommit,
 }: {
   label: string;
   value: number;
+  min?: number;
+  max?: number;
+  width?: number;
   disabled: boolean;
   onCommit: (pt: number) => void;
 }) {
@@ -116,11 +137,11 @@ export function SizeInput({
     <CommitNumberInput
       label={label}
       value={value}
-      min={FONT_PT_MIN}
-      max={FONT_PT_MAX}
+      min={min}
+      max={max}
       step={0.5}
       unit="pt"
-      width={130}
+      width={width}
       disabled={disabled}
       onCommit={onCommit}
     />
@@ -166,18 +187,28 @@ export function MarkInput({
   );
 }
 
+// 칸에 목록의 이름이나 저장된 이름이 그대로 있으면 전체 목록을 보여 준다(기본 동작은 지금 값으로 걸러서
+// 다른 글꼴이 안 보인다). 이름을 치는 중이면 친 글자로 좁힌다
+function fontFilter(saved: string): NonNullable<AutocompleteProps['filter']> {
+  return ({ options, search }) => {
+    const query = search.trim().toLowerCase();
+    const items = options.filter((o) => 'label' in o);
+    const showAll =
+      query === saved.toLowerCase() || items.some((o) => o.label.toLowerCase() === query);
+    return showAll ? items : items.filter((o) => o.label.toLowerCase().includes(query));
+  };
+}
+
 // 글꼴 이름 입력: 추천 목록에서 고르거나 직접 쓴다. 치는 동안에는 저장하지 않고, 칸을 벗어나거나
 // 목록에서 고를 때 한 번만 저장한다(Enter는 따로 받지 않는다: 목록 선택과 겹쳐 두 번 저장되지 않게). 비우면 원래 값으로 돌린다
 export function FontNameInput({
   label,
-  description,
   value,
   suggestions,
   disabled,
   onCommit,
 }: {
   label: string;
-  description?: string;
   value: string;
   suggestions: string[];
   disabled: boolean;
@@ -204,8 +235,23 @@ export function FontNameInput({
   return (
     <Autocomplete
       label={label}
-      description={description}
+      description={
+        suggestions.includes(value)
+          ? undefined
+          : '추천 목록에 없는 글꼴이에요. 한글에 표시되는 이름과 똑같은지 확인해 주세요.'
+      }
+      inputWrapperOrder={['label', 'input', 'description', 'error']}
+      placeholder="목록에서 고르거나 직접 입력"
       data={suggestions}
+      filter={fontFilter(value)}
+      renderOption={({ option }) => (
+        <Group justify="space-between" wrap="nowrap" w="100%">
+          <span>{option.value}</span>
+          {option.value === value && <IconCheck size={14} aria-label="지금 글꼴" />}
+        </Group>
+      )}
+      rightSection={<IconChevronDown size={16} />}
+      rightSectionPointerEvents="none"
       value={draft}
       onChange={setDraft}
       onOptionSubmit={commit}

@@ -11,6 +11,7 @@ import { ItemList } from './ItemList';
 import { PresetPanel } from './PresetPanel';
 import { useWorksheet } from './hooks/useWorksheet';
 import classes from './Worksheet.module.css';
+import { DEFAULT_NUMBER_FORMAT } from './types';
 
 export function WorksheetClient({ worksheetId }: { worksheetId: string }) {
   const h = useWorksheet(worksheetId);
@@ -63,6 +64,23 @@ export function WorksheetClient({ worksheetId }: { worksheetId: string }) {
           aria-label="문제지 제목 (파일 이름으로 쓰여요)"
           placeholder="문제지 제목"
         />
+        <TextInput
+          variant="unstyled"
+          classNames={{ input: classes.subtitle }}
+          value={h.subtitleDraft}
+          onChange={(e) => h.setSubtitleDraft(e.currentTarget.value)}
+          onBlur={h.saveSubtitle}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.nativeEvent.isComposing) e.currentTarget.blur();
+            if (e.key === 'Escape') {
+              h.resetSubtitle();
+              e.currentTarget.blur();
+            }
+          }}
+          maxLength={200}
+          aria-label="큰 제목 (첫 쪽 제목 상자의 둘째 줄에 크게 찍혀요)"
+          placeholder="큰 제목 (예: -정비례와 반비례~통계-)"
+        />
         <Text c="dimmed" mt={4}>
           문제 {ws.items.length}개{ws.student ? ` · ${ws.student}` : ''}
         </Text>
@@ -76,6 +94,10 @@ export function WorksheetClient({ worksheetId }: { worksheetId: string }) {
           numberMode={ws.preset ? (ws.preset.numbering?.mode ?? 'sequence') : null}
           onNumberModeChange={(mode) =>
             h.changePreset((p) => ({ ...p, numbering: { ...p.numbering, mode } }))
+          }
+          numberFormat={ws.preset?.numbering?.format ?? DEFAULT_NUMBER_FORMAT}
+          onNumberFormatChange={(format) =>
+            h.changePreset((p) => ({ ...p, numbering: { ...p.numbering, format } }))
           }
           onReorder={h.reorder}
           onSortBySourceNumber={h.sortBySourceNumber}

@@ -6,7 +6,7 @@ import { IconGripVertical, IconSortAscendingNumbers, IconX } from '@tabler/icons
 
 import { renderMixedContent } from '@/lib/katex';
 import classes from './Worksheet.module.css';
-import type { NumberMode, WsItem } from './types';
+import { DEFAULT_NUMBER_FORMAT, NUMBER_FORMATS, type NumberMode, type WsItem } from './types';
 import { useRowDnd } from './useRowDnd';
 
 interface Props {
@@ -14,6 +14,8 @@ interface Props {
   saving: boolean;
   numberMode: NumberMode | null;
   onNumberModeChange: (mode: NumberMode) => void;
+  numberFormat: string;
+  onNumberFormatChange: (format: string) => void;
   onReorder: (from: number, to: number) => void;
   onSortBySourceNumber: () => void;
   onRemove: (index: number) => void;
@@ -24,6 +26,8 @@ export function ItemList({
   saving,
   numberMode,
   onNumberModeChange,
+  numberFormat,
+  onNumberFormatChange,
   onReorder,
   onSortBySourceNumber,
   onRemove,
@@ -31,6 +35,10 @@ export function ItemList({
   const dnd = useRowDnd(onReorder, !saving && items.length > 1);
   // 시험지가 하나뿐이면 줄마다 같은 제목을 되풀이하지 않는다
   const showExamTitle = new Set(items.map((it) => it.exam.id)).size > 1;
+  // 직접 넣은 다른 형식이면 기본 모양(01)으로 보여 주되, 고르기 전까지는 바꾸지 않는다
+  const formatValue = NUMBER_FORMATS.some((f) => f.value === numberFormat)
+    ? numberFormat
+    : DEFAULT_NUMBER_FORMAT;
   return (
     <Paper withBorder p="md">
       <Title order={4} mb="sm">
@@ -54,6 +62,18 @@ export function ItemList({
               if (v !== numberMode) onNumberModeChange(v as NumberMode);
             }}
           />
+          {/* 원래 번호 그대로일 때는 시험지에 적힌 번호를 손대지 않으므로 모양 고르기를 숨긴다 */}
+          {numberMode === 'sequence' && (
+            <SegmentedControl
+              aria-label="문항 번호 모양"
+              disabled={saving}
+              value={formatValue}
+              data={NUMBER_FORMATS.map((f) => ({ value: f.value, label: f.label }))}
+              onChange={(v) => {
+                if (v !== numberFormat) onNumberFormatChange(v);
+              }}
+            />
+          )}
           <Text size="xs" c="dimmed">
             화면과 한글 파일에 똑같이 적용돼요.
           </Text>

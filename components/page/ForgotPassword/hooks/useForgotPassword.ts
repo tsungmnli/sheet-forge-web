@@ -1,12 +1,11 @@
-"use client";
+'use client';
 
-import { useRef, useState } from "react";
+import { useState } from 'react';
 
 export function useForgotPassword() {
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const emailRef = useRef<HTMLInputElement>(null);
 
   return {
     email,
@@ -15,6 +14,5 @@ export function useForgotPassword() {
     setSubmitting,
     error,
     setError,
-    emailRef,
   };
 }

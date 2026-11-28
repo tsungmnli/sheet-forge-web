@@ -7,14 +7,14 @@ import { IconCheck, IconChevronDown, IconPencil, IconX } from '@tabler/icons-rea
 
 import type { Exam } from '@/lib/examData';
 
-import { ExamNotes } from './ExamNotes';
+import { ExamNotes, type NotesPatch } from './ExamNotes';
 
 interface Props {
   exam: Exam;
   // 저장에 성공하면 true. 실패하면 false를 돌려줘서 입력창을 그대로 둔다(쓰던 제목이 사라지지 않게).
   onTitleChange: (title: string) => Promise<boolean>;
-  // 학생 이름·메모. 바뀐 칸만 담아 부른다. 같은 규칙으로 성공 여부를 돌려준다.
-  onNotesChange: (patch: { student?: string; memo?: string }) => Promise<boolean>;
+  // 학생 이름·출처·메모. 바뀐 칸만 담아 부른다. 같은 규칙으로 성공 여부를 돌려준다.
+  onNotesChange: (patch: NotesPatch) => Promise<boolean>;
 }
 
 export function ExamHeader({ exam, onTitleChange, onNotesChange }: Props) {
@@ -176,10 +176,17 @@ export function ExamHeader({ exam, onTitleChange, onNotesChange }: Props) {
         }
         styles={{ label: { fontWeight: 500 } }}
       >
-        학생 이름·메모
+        학생 이름·출처·메모
       </Button>
 
-      {opened && <ExamNotes student={exam.studentName} memo={exam.memo} onSave={onNotesChange} />}
+      {opened && (
+        <ExamNotes
+          student={exam.studentName}
+          sourceLabel={exam.sourceLabel}
+          memo={exam.memo}
+          onSave={onNotesChange}
+        />
+      )}
     </div>
   );
 }

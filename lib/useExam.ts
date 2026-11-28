@@ -40,6 +40,7 @@ export function useExam(examId: string) {
         title: e.data.title,
         studentName: e.data.student,
         memo: e.data.memo,
+        sourceLabel: e.data.source_label ?? '',
         photos: (p.data?.items ?? []).map((pg, pi) => ({
           id: pg.id,
           name: `${pi + 1}쪽`,

@@ -19,6 +19,8 @@ export interface ExamOut {
   title: string;
   student: string;
   memo: string;
+  // 출처: 내보낼 때 "[대안중 2025기말]"처럼 찍는 인쇄용 이름(관리용 제목과 별개). 옛 서버는 안 줄 수 있다
+  source_label?: string;
   version: number;
   created_at: string;
   updated_at: string;
@@ -88,6 +90,7 @@ export interface ExamPatchIn {
   title?: string | null;
   student?: string | null;
   memo?: string | null;
+  source_label?: string | null;
 }
 
 export interface ProcessingOut {

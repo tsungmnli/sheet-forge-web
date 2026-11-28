@@ -16,6 +16,7 @@ export function useWorksheet(worksheetId: string) {
   const [etag, setEtag] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [titleDraft, setTitleDraft] = useState('');
+  const [subtitleDraft, setSubtitleDraft] = useState('');
   // 내 기본 모양(새 문제지가 이 모양으로 시작)이 저장돼 있는지
   const [hasDefault, setHasDefault] = useState(false);
   const [defaultBusy, setDefaultBusy] = useState(false);
@@ -60,6 +61,13 @@ export function useWorksheet(worksheetId: string) {
     if (savedTitle !== undefined) setTitleDraft(savedTitle);
   }
 
+  const savedSubtitle = ws ? (ws.subtitle ?? '') : undefined;
+  const [prevSavedSubtitle, setPrevSavedSubtitle] = useState(savedSubtitle);
+  if (savedSubtitle !== prevSavedSubtitle) {
+    setPrevSavedSubtitle(savedSubtitle);
+    if (savedSubtitle !== undefined) setSubtitleDraft(savedSubtitle);
+  }
+
   // 고치기(제목·순서·빼기)는 모두 If-Match와 함께 보내고, 응답으로 화면을 갱신한다
   const send = useCallback(
     async (path: string, method: 'PATCH' | 'PUT', body: unknown) => {
@@ -97,6 +105,21 @@ export function useWorksheet(worksheetId: string) {
 
   const resetTitle = useCallback(() => {
     if (ws) setTitleDraft(ws.title);
+  }, [ws]);
+
+  // 부제는 비워도 된다(비우면 제목만 찍힌다)
+  const saveSubtitle = useCallback(async () => {
+    if (!ws) return;
+    const next = subtitleDraft.trim();
+    if (next === (ws.subtitle ?? '')) {
+      setSubtitleDraft(ws.subtitle ?? '');
+      return;
+    }
+    await send(`/worksheets/${worksheetId}`, 'PATCH', { subtitle: next });
+  }, [ws, subtitleDraft, send, worksheetId]);
+
+  const resetSubtitle = useCallback(() => {
+    if (ws) setSubtitleDraft(ws.subtitle ?? '');
   }, [ws]);
 
   const putIds = useCallback(
@@ -276,6 +299,10 @@ export function useWorksheet(worksheetId: string) {
     setTitleDraft,
     saveTitle,
     resetTitle,
+    subtitleDraft,
+    setSubtitleDraft,
+    saveSubtitle,
+    resetSubtitle,
     reorder,
     sortBySourceNumber,
     removeAt,

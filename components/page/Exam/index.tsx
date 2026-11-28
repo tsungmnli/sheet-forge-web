@@ -37,6 +37,7 @@ const EMPTY_EXAM: Exam = {
   title: '',
   studentName: '',
   memo: '',
+  sourceLabel: '',
   photos: [],
   problems: [],
 };

@@ -45,9 +45,16 @@
   flex-shrink: 0;
 }
 
+/* 오른쪽 열: 모양 패널(미리보기·여백 칸)이 들어가려면 21rem은 좁다. 넓은 화면일수록 조금 더 준다 */
 @media (min-width: 62em) {
   .columns {
-    grid-template-columns: minmax(0, 1fr) 21rem;
+    grid-template-columns: minmax(0, 1fr) 23rem;
+  }
+}
+
+@media (min-width: 75em) {
+  .columns {
+    grid-template-columns: minmax(0, 1fr) 26rem;
   }
 }
 
@@ -65,6 +72,22 @@
 }
 
 .title:focus {
+  border-color: var(--mantine-primary-color-filled);
+}
+
+.subtitle {
+  font-size: var(--mantine-font-size-md);
+  padding-inline: var(--mantine-spacing-xs);
+  border: 1px solid transparent;
+  border-radius: var(--mantine-radius-sm);
+  transition: border-color 150ms ease;
+}
+
+.subtitle:hover {
+  border-color: var(--mantine-color-default-border);
+}
+
+.subtitle:focus {
   border-color: var(--mantine-primary-color-filled);
 }
 
@@ -104,4 +127,82 @@
   flex-shrink: 0;
   text-align: center;
   font-weight: 600;
+}
+
+/* 쪽 번호 '상자' 모양 선택지: 한글 파일처럼 테두리 안에 번호를 보여 준다 */
+.boxedLabel {
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  padding: 0 4px;
+}
+
+/* 여백 편집: 용지 그림 위아래로 두 칸씩, 양옆으로 한 칸씩(위: 위쪽·머리말, 아래: 꼬리말·아래쪽).
+   칸 폭은 고정하지 않고 자리에 맞춰 늘고 줄어, 좁은 패널에서도 밖으로 삐져나가지 않는다 */
+.marginGrid {
+  display: grid;
+  /* 옆으로 넓은 한 열 화면에서 칸이 끝없이 늘어나지 않게 한다 */
+  width: 100%;
+  max-width: 26rem;
+  margin-inline: auto;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-areas:
+    'top top top'
+    'left center right'
+    'bottom bottom bottom';
+  gap: var(--mantine-spacing-xs);
+  align-items: center;
+  min-width: 0;
+}
+
+.marginTop,
+.marginBottom {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--mantine-spacing-xs);
+  min-width: 0;
+}
+
+.marginTop {
+  grid-area: top;
+}
+
+.marginBottom {
+  grid-area: bottom;
+}
+
+.marginLeft {
+  grid-area: left;
+  min-width: 0;
+}
+
+.marginRight {
+  grid-area: right;
+  min-width: 0;
+}
+
+.marginCenter {
+  grid-area: center;
+  display: flex;
+  justify-content: center;
+}
+
+.paperSketch {
+  display: block;
+  color: var(--mantine-color-gray-6);
+}
+
+/* 배치 미리보기: 모양 패널 맨 위에 일반 흐름으로 둔다(따라다니지 않는다).
+   따라다니면 앱 헤더·하단 바와 함께 화면 높이를 먹고, 아래로 지나가는 설정 칸이 중간에서 잘려 보이며,
+   칸에 포커스가 가면 그 칸이 미리보기 밑에 숨기 때문이다. 여백 칸 옆에는 즉시 바뀌는 작은 용지 그림이 따로 있다 */
+.previewCard {
+  padding: var(--mantine-spacing-xs) var(--mantine-spacing-sm);
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: var(--mantine-radius-sm);
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+}
+
+.previewPage {
+  display: block;
+  width: 120px;
+  height: auto;
 }
